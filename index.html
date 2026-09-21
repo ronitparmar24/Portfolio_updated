@@ -12,6 +12,25 @@
   <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/manrope@5.2.8/index.css">
   <link rel="stylesheet" href="./styles.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "name": "Ronit Parmar",
+    "url": "https://ronitparmar24.github.io/Portfolio_updated/",
+    "jobTitle": "Frontend Developer",
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "Ahmedabad",
+      "addressCountry": "India"
+    },
+    "sameAs": [
+      "https://github.com/ronitparmar24",
+      "https://linkedin.com/in/ronit-parmar"
+    ],
+    "knowsAbout": ["React.js", "JavaScript", "Responsive Design", "Node.js", "Express", "MongoDB", "UI/UX Design"]
+  }
+  </script>
   <script>try{const t=localStorage.getItem('ronit-theme');document.documentElement.dataset.theme=t|| (matchMedia('(prefers-color-scheme: light)').matches?'light':'dark')}catch(e){}</script>
   <link rel="stylesheet" href="./motion.css">
   <script src="./script.js" defer></script>
@@ -83,7 +102,7 @@
           <div class="project-info"><div class="project-title-row"><h3>DigiKhata</h3><span class="project-kind">BUSINESS TOOLS</span></div><p>A digital ledger for small businesses, bringing transactions, inventory, and payment reminders together.</p><div class="tags"><span>Python</span><span>Streamlit</span><span>SQLite</span></div><div class="project-links"><button class="text-link" data-project="digikhata">Project breakdown <svg class="icon"><use href="#arrow-right"/></svg></button><a href="https://github.com/ronitparmar24/digiKhata" target="_blank" rel="noopener noreferrer" aria-label="DigiKhata source on GitHub"><svg class="icon"><use href="#github"/></svg></a></div></div>
         </article>
       </div><p id="filter-status" class="sr-only" aria-live="polite">Showing 3 projects</p>
-      <div class="more-builds reveal"><div class="more-builds-heading"><p class="eyebrow">MORE BUILDS / FROM MY GITHUB</p><span>Curiosity doesn’t stay in one lane.</span></div><div id="github-repos" class="github-grid" aria-busy="true"></div><a class="repo-row" href="https://github.com/ronitparmar24/BRTS-Management" target="_blank" rel="noopener noreferrer"><span class="repo-index">04</span><div><h3>BRTS Management</h3><p>Routes, stops, and schedules for public transport operations.</p></div><span class="repo-type">WEB APPLICATION</span><svg class="icon"><use href="#arrow-up-right"/></svg></a><a class="repo-row" href="https://github.com/ronitparmar24/FlappyBirdV1" target="_blank" rel="noopener noreferrer"><span class="repo-index">05</span><div><h3>Flappy Bird</h3><p>A Java arcade experiment in controls, collisions, and one more try.</p></div><span class="repo-type">JAVA / GAME DEVELOPMENT</span><svg class="icon"><use href="#arrow-up-right"/></svg></a></div>
+      <div class="more-builds reveal"><div class="more-builds-heading"><p class="eyebrow">MORE BUILDS / FROM MY GITHUB</p><span>Curiosity doesn’t stay in one lane.</span></div><div id="github-repos" class="github-grid" aria-busy="true"><article class="github-card skeleton-card"><div class="skeleton-line skeleton-title"></div><div class="skeleton-line skeleton-desc"></div><div class="skeleton-line skeleton-desc short"></div><div class="skeleton-line skeleton-meta"></div></article><article class="github-card skeleton-card"><div class="skeleton-line skeleton-title"></div><div class="skeleton-line skeleton-desc"></div><div class="skeleton-line skeleton-desc short"></div><div class="skeleton-line skeleton-meta"></div></article><article class="github-card skeleton-card"><div class="skeleton-line skeleton-title"></div><div class="skeleton-line skeleton-desc"></div><div class="skeleton-line skeleton-desc short"></div><div class="skeleton-line skeleton-meta"></div></article></div><a class="repo-row" href="https://github.com/ronitparmar24/BRTS-Management" target="_blank" rel="noopener noreferrer"><span class="repo-index">04</span><div><h3>BRTS Management</h3><p>Routes, stops, and schedules for public transport operations.</p></div><span class="repo-type">WEB APPLICATION</span><svg class="icon"><use href="#arrow-up-right"/></svg></a><a class="repo-row" href="https://github.com/ronitparmar24/FlappyBirdV1" target="_blank" rel="noopener noreferrer"><span class="repo-index">05</span><div><h3>Flappy Bird</h3><p>A Java arcade experiment in controls, collisions, and one more try.</p></div><span class="repo-type">JAVA / GAME DEVELOPMENT</span><svg class="icon"><use href="#arrow-up-right"/></svg></a></div>
     </section>
     <section class="manifesto" aria-label="My approach"><div class="container"><div class="manifesto-meta"><span class="eyebrow">MY APPROACH / 001</span><span class="manifesto-star" aria-hidden="true">✳</span></div><p class="manifesto-text"><span class="ink-line">Make it work.</span><br><span class="ink-line">Make it <em>matter.</em></span></p><div class="manifesto-footer"><span>FUNCTION IS THE FOUNDATION. FEELING IS THE DIFFERENCE.</span><span>↓ KEEP EXPLORING</span></div></div></section>
     <section id="about" class="about-section section" aria-labelledby="about-heading"><div class="container about-grid">
@@ -129,15 +148,15 @@
               <div class="form-row">
                 <label for="contact-name">Name</label>
                 <input id="contact-name" name="name" type="text" required minlength="2" maxlength="80"
-                       autocomplete="name" placeholder="Your name" />
-                <small class="field-error" data-error-for="name"></small>
+                       autocomplete="name" placeholder="Your name" aria-describedby="contact-name-error" />
+                <small id="contact-name-error" class="field-error" data-error-for="name"></small>
               </div>
 
               <div class="form-row">
                 <label for="contact-email">Email</label>
                 <input id="contact-email" name="email" type="email" required maxlength="150"
-                       autocomplete="email" placeholder="you@example.com" />
-                <small class="field-error" data-error-for="email"></small>
+                       autocomplete="email" placeholder="you@example.com" aria-describedby="contact-email-error" />
+                <small id="contact-email-error" class="field-error" data-error-for="email"></small>
               </div>
 
               <div class="form-row">
@@ -147,10 +166,13 @@
               </div>
 
               <div class="form-row">
-                <label for="contact-message">Message</label>
+                <div class="label-row">
+                  <label for="contact-message">Message</label>
+                  <small id="contact-char-counter" class="char-counter" aria-live="polite">0 / 3000</small>
+                </div>
                 <textarea id="contact-message" name="message" required minlength="10" maxlength="3000"
-                          rows="5" placeholder="Tell me what you're working on…"></textarea>
-                <small class="field-error" data-error-for="message"></small>
+                          rows="5" placeholder="Tell me what you're working on…" aria-describedby="contact-message-error contact-char-counter"></textarea>
+                <small id="contact-message-error" class="field-error" data-error-for="message"></small>
               </div>
 
               <!-- Honeypot: hidden from humans and assistive tech, visible to dumb bots. -->
