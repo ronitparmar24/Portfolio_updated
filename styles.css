@@ -59,6 +59,21 @@
   gap: 6px;
   margin-bottom: 14px;
 }
+.label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.char-counter {
+  font-family: monospace;
+  font-size: 9px;
+  opacity: 0.75;
+  color: #1b260c;
+}
+.char-counter.is-limit {
+  color: #a81c20;
+  font-weight: 700;
+}
 .form-row label {
   font-size: 10px;
   font-weight: 750;
@@ -96,6 +111,15 @@
   background: rgba(255, 255, 255, 0.85);
   box-shadow: 0 0 0 3px rgba(23, 30, 11, 0.12);
 }
+.form-row input.is-invalid,
+.form-row textarea.is-invalid {
+  border-color: #a81c20;
+  background: rgba(255, 235, 235, 0.6);
+}
+.form-row input.is-valid,
+.form-row textarea.is-valid {
+  border-color: #274b12;
+}
 .form-row input::placeholder,
 .form-row textarea::placeholder {
   color: rgba(39, 53, 17, 0.55);
@@ -105,6 +129,7 @@
   min-height: 14px;
   font-size: 11px;
   font-weight: 600;
+  transition: opacity 0.2s;
 }
 .button-submit {
   background: #171e0b;
@@ -143,18 +168,46 @@
 }
 .form-status.is-success {
   color: #135e1d;
+  animation: statusSlide 0.25s ease-out;
 }
 .form-status.is-error {
   color: #9c1519;
+  animation: statusSlide 0.25s ease-out;
+}
+@keyframes statusSlide {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-/* GitHub Live Grid */
+/* GitHub Live Grid & Skeletons */
 .github-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 18px;
   margin-block: 24px 16px;
 }
+.skeleton-card {
+  min-height: 130px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  animation: pulseSkeleton 1.6s ease-in-out infinite;
+}
+.skeleton-line {
+  background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.03) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s infinite;
+  border-radius: 4px;
+}
+[data-theme="light"] .skeleton-line {
+  background: linear-gradient(90deg, rgba(0,0,0,0.03) 25%, rgba(0,0,0,0.08) 50%, rgba(0,0,0,0.03) 75%);
+  background-size: 200% 100%;
+}
+.skeleton-title { height: 16px; width: 60%; margin-bottom: 12px; }
+.skeleton-desc { height: 11px; width: 90%; margin-bottom: 7px; }
+.skeleton-desc.short { width: 50%; margin-bottom: 16px; }
+.skeleton-meta { height: 10px; width: 35%; margin-top: auto; }
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+@keyframes pulseSkeleton { 0%, 100% { opacity: 0.65; } 50% { opacity: 0.95; } }
 .github-card {
   padding: 22px;
   border: 1px solid var(--line);
