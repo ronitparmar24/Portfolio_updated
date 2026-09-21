@@ -14,10 +14,13 @@ export const router = Router();
  * Render instance from going to sleep.
  */
 router.get('/health', (req, res) => {
-  res.json({
-    success: true,
-    status: 'ok',
-    database: databaseStatus(),
+  const dbStatus = databaseStatus();
+  const isHealthy = dbStatus === 'connected' || dbStatus === 'connecting';
+
+  res.status(isHealthy ? 200 : 503).json({
+    success: isHealthy,
+    status: isHealthy ? 'ok' : 'degraded',
+    database: dbStatus,
     features,
     uptimeSeconds: Math.round(process.uptime()),
     timestamp: new Date().toISOString()

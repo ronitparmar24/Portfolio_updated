@@ -26,4 +26,7 @@ const contactMessageSchema = new mongoose.Schema(
 // Supports both the duplicate-submission check and "newest first" listings.
 contactMessageSchema.index({ email: 1, createdAt: -1 });
 
+// Automatically expire messages after 365 days to maintain free database tier hygiene.
+contactMessageSchema.index({ createdAt: 1 }, { expireAfterSeconds: 365 * 24 * 60 * 60 });
+
 export const ContactMessage = mongoose.model('ContactMessage', contactMessageSchema);
