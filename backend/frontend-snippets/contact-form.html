@@ -1,0 +1,45 @@
+<!-- Drop this inside your existing #contact section in index.html -->
+
+<form id="contact-form" class="contact-form" novalidate>
+  <div class="form-row">
+    <label for="contact-name">Name</label>
+    <input id="contact-name" name="name" type="text" required minlength="2" maxlength="80"
+           autocomplete="name" placeholder="Your name" />
+    <small class="field-error" data-error-for="name"></small>
+  </div>
+
+  <div class="form-row">
+    <label for="contact-email">Email</label>
+    <input id="contact-email" name="email" type="email" required maxlength="150"
+           autocomplete="email" placeholder="you@example.com" />
+    <small class="field-error" data-error-for="email"></small>
+  </div>
+
+  <div class="form-row">
+    <label for="contact-subject">Subject <span class="optional">(optional)</span></label>
+    <input id="contact-subject" name="subject" type="text" maxlength="150"
+           placeholder="Internship opportunity, freelance project…" />
+  </div>
+
+  <div class="form-row">
+    <label for="contact-message">Message</label>
+    <textarea id="contact-message" name="message" required minlength="10" maxlength="3000"
+              rows="6" placeholder="Tell me what you're working on…"></textarea>
+    <small class="field-error" data-error-for="message"></small>
+  </div>
+
+  <!-- Honeypot: hidden from humans and assistive tech, visible to dumb bots. -->
+  <div class="form-trap" aria-hidden="true">
+    <label for="website">Website</label>
+    <input id="website" name="website" type="text" tabindex="-1" autocomplete="off" />
+  </div>
+
+  <!-- Optional: Cloudflare Turnstile. Add the script tag below and your site key.
+       <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  <div class="cf-turnstile" data-sitekey="YOUR_SITE_KEY"></div>
+  -->
+
+  <button type="submit" class="button button-primary">Send message</button>
+
+  <p id="contact-status" class="form-status" role="status" aria-live="polite"></p>
+</form>
