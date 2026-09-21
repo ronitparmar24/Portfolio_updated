@@ -222,3 +222,136 @@ document.querySelector('.copy-email').addEventListener('click', async () => {
   }
 });
 document.querySelector('#year').textContent = new Date().getFullYear();
+
+/* --- Backend Integration: Contact Form & GitHub Repositories --- */
+const API_BASE_URL =
+  location.hostname === 'localhost' ||
+  location.hostname === '127.0.0.1' ||
+  location.protocol === 'file:'
+    ? 'http://localhost:5000/api'
+    : 'https://YOUR-SERVICE.onrender.com/api';
+
+/**
+ * Wake up the API on page load (Render free instances sleep after inactivity).
+ */
+function warmUpApi() {
+  fetch(`${API_BASE_URL}/health`, { mode: 'cors' }).catch(() => {});
+}
+
+const contactForm = document.querySelector('#contact-form');
+const contactStatus = document.querySelector('#contact-status');
+
+if (contactForm) {
+  warmUpApi();
+
+  contactForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    const submitButton = contactForm.querySelector('button[type="submit"]');
+    const formData = new FormData(contactForm);
+
+    // Clear previous field errors
+    contactForm
+      .querySelectorAll('.field-error')
+      .forEach((element) => (element.textContent = ''));
+
+    const payload = {
+      name: formData.get('name')?.trim(),
+      email: formData.get('email')?.trim(),
+      subject: formData.get('subject')?.trim(),
+      message: formData.get('message')?.trim(),
+      website: formData.get('website') ?? '',
+      turnstileToken: formData.get('cf-turnstile-response') ?? undefined
+    };
+
+    submitButton.disabled = true;
+    const originalContent = submitButton.innerHTML;
+    submitButton.textContent = 'Sending…';
+    contactStatus.textContent = '';
+    contactStatus.className = 'form-status';
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/contact`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(20000)
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        if (result.errors) {
+          Object.entries(result.errors).forEach(([field, messages]) => {
+            const target = contactForm.querySelector(`[data-error-for="${field}"]`);
+            if (target) target.textContent = messages[0];
+          });
+        }
+        throw new Error(result.message || 'Could not send your message.');
+      }
+
+      contactStatus.textContent = result.message;
+      contactStatus.classList.add('is-success');
+      contactForm.reset();
+      if (window.turnstile) window.turnstile.reset();
+    } catch (error) {
+      contactStatus.textContent =
+        error.name === 'TimeoutError'
+          ? 'The server is waking up. Please try once more.'
+          : error.message;
+      contactStatus.classList.add('is-error');
+    } finally {
+      submitButton.disabled = false;
+      submitButton.innerHTML = originalContent;
+    }
+  });
+}
+
+/**
+ * Render live GitHub repo cards from the portfolio backend.
+ */
+async function loadGithubRepositories() {
+  const container = document.querySelector('#github-repos');
+  if (!container) return;
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/github/repos?limit=6`);
+    const result = await response.json();
+    if (!result.success || !Array.isArray(result.data) || result.data.length === 0) {
+      throw new Error('No repos returned');
+    }
+
+    container.replaceChildren(
+      ...result.data.map((repo) => {
+        const card = document.createElement('article');
+        card.className = 'github-card';
+
+        const title = document.createElement('h3');
+        title.textContent = repo.name;
+
+        const description = document.createElement('p');
+        description.textContent = repo.description || 'Public repository on GitHub.';
+
+        const meta = document.createElement('span');
+        meta.className = 'github-meta';
+        meta.textContent = `${repo.language || 'Mixed'} · ★ ${repo.stars}`;
+
+        const link = document.createElement('a');
+        link.href = repo.url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = `View on GitHub ↗`;
+
+        card.append(title, description, meta, link);
+        return card;
+      })
+    );
+  } catch (err) {
+    // If backend isn't reachable or fails, fail gracefully without breaking UI
+    container.remove();
+  } finally {
+    container?.removeAttribute?.('aria-busy');
+  }
+}
+
+loadGithubRepositories();
