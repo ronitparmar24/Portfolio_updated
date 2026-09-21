@@ -244,16 +244,74 @@ const contactStatus = document.querySelector('#contact-status');
 if (contactForm) {
   warmUpApi();
 
+  const nameInput = contactForm.querySelector('#contact-name');
+  const emailInput = contactForm.querySelector('#contact-email');
+  const messageInput = contactForm.querySelector('#contact-message');
+  const charCounter = contactForm.querySelector('#contact-char-counter');
+
+  // Real-time character counter for message textarea
+  if (messageInput && charCounter) {
+    messageInput.addEventListener('input', () => {
+      const len = messageInput.value.length;
+      charCounter.textContent = `${len} / 3000`;
+      charCounter.classList.toggle('is-limit', len > 2800);
+    });
+  }
+
+  function validateField(input, testFn, errorMsg) {
+    if (!input) return true;
+    const errTarget = contactForm.querySelector(`[data-error-for="${input.name}"]`);
+    const val = input.value.trim();
+    const isValid = testFn(val);
+
+    if (!isValid) {
+      input.classList.add('is-invalid');
+      input.classList.remove('is-valid');
+      input.setAttribute('aria-invalid', 'true');
+      if (errTarget) errTarget.textContent = errorMsg;
+    } else {
+      input.classList.remove('is-invalid');
+      if (val.length > 0) input.classList.add('is-valid');
+      input.setAttribute('aria-invalid', 'false');
+      if (errTarget) errTarget.textContent = '';
+    }
+    return isValid;
+  }
+
+  const fieldValidators = {
+    name: () => validateField(nameInput, (v) => v.length >= 2 && v.length <= 80, 'Name must be at least 2 characters'),
+    email: () => validateField(emailInput, (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), 'Enter a valid email address'),
+    message: () => validateField(messageInput, (v) => v.length >= 10 && v.length <= 3000, 'Message must be at least 10 characters')
+  };
+
+  [nameInput, emailInput, messageInput].forEach((input) => {
+    if (!input) return;
+    input.addEventListener('blur', () => fieldValidators[input.name]?.());
+    input.addEventListener('input', () => {
+      if (input.classList.contains('is-invalid')) {
+        fieldValidators[input.name]?.();
+      }
+    });
+  });
+
   contactForm.addEventListener('submit', async (event) => {
     event.preventDefault();
 
+    // Client-side validation check before network request
+    const isNameValid = fieldValidators.name();
+    const isEmailValid = fieldValidators.email();
+    const isMessageValid = fieldValidators.message();
+
+    if (!isNameValid || !isEmailValid || !isMessageValid) {
+      contactStatus.textContent = 'Please check the highlighted fields.';
+      contactStatus.className = 'form-status is-error';
+      const firstInvalid = contactForm.querySelector('.is-invalid');
+      firstInvalid?.focus();
+      return;
+    }
+
     const submitButton = contactForm.querySelector('button[type="submit"]');
     const formData = new FormData(contactForm);
-
-    // Clear previous field errors
-    contactForm
-      .querySelectorAll('.field-error')
-      .forEach((element) => (element.textContent = ''));
 
     const payload = {
       name: formData.get('name')?.trim(),
@@ -284,7 +342,12 @@ if (contactForm) {
         if (result.errors) {
           Object.entries(result.errors).forEach(([field, messages]) => {
             const target = contactForm.querySelector(`[data-error-for="${field}"]`);
+            const targetInput = contactForm.querySelector(`[name="${field}"]`);
             if (target) target.textContent = messages[0];
+            if (targetInput) {
+              targetInput.classList.add('is-invalid');
+              targetInput.setAttribute('aria-invalid', 'true');
+            }
           });
         }
         throw new Error(result.message || 'Could not send your message.');
@@ -293,6 +356,8 @@ if (contactForm) {
       contactStatus.textContent = result.message;
       contactStatus.classList.add('is-success');
       contactForm.reset();
+      contactForm.querySelectorAll('.is-valid, .is-invalid').forEach((el) => el.classList.remove('is-valid', 'is-invalid'));
+      if (charCounter) charCounter.textContent = '0 / 3000';
       if (window.turnstile) window.turnstile.reset();
     } catch (error) {
       contactStatus.textContent =
@@ -347,7 +412,7 @@ async function loadGithubRepositories() {
       })
     );
   } catch (err) {
-    // If backend isn't reachable or fails, fail gracefully without breaking UI
+    // If backend isn't reachable or fails, remove the skeleton container gracefully
     container.remove();
   } finally {
     container?.removeAttribute?.('aria-busy');
@@ -355,3 +420,4 @@ async function loadGithubRepositories() {
 }
 
 loadGithubRepositories();
+
