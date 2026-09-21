@@ -19,7 +19,22 @@ export const app = express();
 app.set('trust proxy', 1);
 app.disable('x-powered-by');
 
-app.use(helmet());
+// Lightweight HTTP request logger
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    console.log(`[http] ${req.method} ${req.originalUrl} ${res.statusCode} (${duration}ms)`);
+  });
+  next();
+});
+
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    contentSecurityPolicy: false
+  })
+);
 app.use(compression());
 
 app.use(
@@ -35,7 +50,9 @@ app.use(
       ) {
         return callback(null, true);
       }
-      return callback(new Error(`Origin ${origin} is not allowed`));
+      const err = new Error(`Origin ${origin} is not allowed`);
+      err.statusCode = 403;
+      return callback(err);
     },
     methods: ['GET', 'POST'],
     maxAge: 86400
