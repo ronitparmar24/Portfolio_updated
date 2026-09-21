@@ -1,0 +1,17 @@
+/* Honeypot — offscreen rather than display:none, because some bots skip
+   display:none fields but still fill positioned ones. */
+.form-trap {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.form-row { display: grid; gap: 0.4rem; margin-bottom: 1rem; }
+.field-error { color: #e5484d; min-height: 1rem; font-size: 0.85rem; }
+.form-status { margin-top: 0.75rem; min-height: 1.25rem; }
+.form-status.is-success { color: #30a46c; }
+.form-status.is-error { color: #e5484d; }
+
+.contact-form button[disabled] { opacity: 0.6; cursor: not-allowed; }
