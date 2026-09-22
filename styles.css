@@ -302,24 +302,27 @@
 /* Scoped dedicated widget window */
 dialog#assistant-dialog {
   position: fixed;
-  inset: auto 28px 92px auto;
-  margin: 0;
+  inset: 0;
+  margin: auto 28px 92px auto;
   width: 380px;
   max-width: calc(100vw - 32px);
   height: 520px;
   max-height: calc(100vh - 120px);
+  padding: 0;
   border: 1px solid var(--line);
   border-radius: 18px;
   background: var(--bg);
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
-  display: none;
   flex-direction: column;
   overflow: hidden;
-  z-index: 50;
-  animation: assistantPopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 9999;
+}
+dialog#assistant-dialog:not([open]) {
+  display: none;
 }
 dialog#assistant-dialog[open] {
   display: flex;
+  animation: assistantPopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 dialog#assistant-dialog::backdrop {
   background: rgba(0, 0, 0, 0.25);
@@ -498,7 +501,8 @@ dialog#assistant-dialog .dialog-note {
 
 @media (max-width: 620px) {
   dialog#assistant-dialog {
-    inset: auto 0 0 0;
+    inset: 0;
+    margin: auto 0 0 0;
     width: 100%;
     max-width: 100%;
     height: 82vh;
