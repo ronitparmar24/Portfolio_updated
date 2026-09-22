@@ -42,8 +42,12 @@ export async function getRepositories() {
 
   const repositories = await response.json();
 
+  // Exclude forks, archived repos, and the portfolio repos themselves
+  // (Portfolio and Portfolio_updated are meta-repos — not relevant as project showcases)
+  const EXCLUDED = new Set(['Portfolio', 'Portfolio_updated', 'PortFolio', 'ronit-portfolio']);
+
   const data = repositories
-    .filter((repo) => !repo.fork && !repo.archived)
+    .filter((repo) => !repo.fork && !repo.archived && !EXCLUDED.has(repo.name))
     .map((repo) => ({
       name: repo.name,
       description: repo.description,
