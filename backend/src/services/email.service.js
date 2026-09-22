@@ -18,10 +18,13 @@ function getInitials(name) {
 }
 
 /**
- * Send yourself a notification when someone uses the contact form.
+ * Send notification when someone submits the contact form.
  *
- * Includes both responsive, high-aesthetic HTML and plain-text fallback.
- * replyTo allows hitting 'Reply' in Gmail to answer the sender directly.
+ * Styled to perfectly align with Ronit Parmar's portfolio design system:
+ * - Deep obsidian backgrounds (#0d0e0e, #161817)
+ * - Signature Electric Lime accent (#d2f96b) with dark ink (#171e0b)
+ * - Soft pastel lavender accent (#b5a4ec) & Georgia serif typography
+ * - Clean monospace section metadata
  */
 export async function sendContactNotification(message) {
   if (!features.email) {
@@ -56,88 +59,102 @@ export async function sendContactNotification(message) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>New Message: ${escapedSubject}</title>
 </head>
-<body style="margin: 0; padding: 0; background-color: #0b0f19; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; color: #e2e8f0;">
-  <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #0b0f19; padding: 32px 12px;">
+<body style="margin: 0; padding: 0; background-color: #0d0e0e; font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; color: #f1f2eb;">
+  <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #0d0e0e; padding: 36px 12px;">
     <tr>
       <td align="center">
-        <!-- Main Email Container Card -->
-        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 580px; background-color: #121929; border: 1px solid #1f293d; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);">
+        <!-- Main Card Container: Styled after Portfolio Theme -->
+        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 580px; background-color: #161817; border: 1px solid #292d28; border-radius: 16px; overflow: hidden; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65);">
           
-          <!-- Gradient Top Highlight Bar -->
+          <!-- Top Accent Ribbon: Electric Lime & Lavender -->
           <tr>
-            <td style="background: linear-gradient(90deg, #6366f1 0%, #a855f7 50%, #ec4899 100%); height: 5px;"></td>
+            <td style="background: linear-gradient(90deg, #d2f96b 0%, #b5a4ec 65%, #d2f96b 100%); height: 4px;"></td>
           </tr>
 
-          <!-- Header Section -->
+          <!-- Top Brand Bar -->
           <tr>
-            <td style="padding: 32px 28px 20px 28px;">
+            <td style="padding: 28px 32px 18px 32px; border-bottom: 1px solid #242823;">
               <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
                 <tr>
-                  <td>
-                    <span style="display: inline-block; background-color: rgba(99, 102, 241, 0.15); color: #818cf8; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 4px 12px; border-radius: 9999px; border: 1px solid rgba(99, 102, 241, 0.3);">
-                      ✦ New Recruiter / Contact Inquiry
+                  <td valign="middle">
+                    <span style="font-family: Georgia, 'Times New Roman', serif; font-size: 21px; font-weight: 700; color: #f1f2eb; letter-spacing: -0.5px;">
+                      Ronit Parmar<span style="color: #d2f96b; font-size: 18px; font-style: normal; margin-left: 2px;">.</span>
                     </span>
-                    <h1 style="margin: 14px 0 0 0; color: #ffffff; font-size: 21px; font-weight: 700; line-height: 1.35; letter-spacing: -0.01em;">
-                      ${escapedSubject}
-                    </h1>
+                  </td>
+                  <td align="right" valign="middle">
+                    <span style="display: inline-block; background-color: #1d2514; color: #d2f96b; border: 1px solid #364421; font-size: 10px; font-weight: 750; letter-spacing: 0.9px; text-transform: uppercase; padding: 5px 12px; border-radius: 9999px;">
+                      <span style="display: inline-block; width: 6px; height: 6px; background-color: #d2f96b; border-radius: 50%; margin-right: 6px; vertical-align: middle; box-shadow: 0 0 6px rgba(210, 249, 107, 0.6);"></span>Recruiter Message
+                    </span>
                   </td>
                 </tr>
               </table>
             </td>
           </tr>
 
-          <!-- Sender Info Card -->
+          <!-- Subject Title Section -->
           <tr>
-            <td style="padding: 0 28px 24px 28px;">
-              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #172136; border: 1px solid #23304d; border-radius: 12px; padding: 16px 18px;">
+            <td style="padding: 26px 32px 18px 32px;">
+              <div style="font-family: ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.3px; color: #b5a4ec; margin-bottom: 8px;">
+                // INCOMING INQUIRY
+              </div>
+              <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 650; line-height: 1.3; letter-spacing: -0.8px;">
+                ${escapedSubject}
+              </h1>
+            </td>
+          </tr>
+
+          <!-- Sender Profile Card -->
+          <tr>
+            <td style="padding: 0 32px 22px 32px;">
+              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #1d201e; border: 1px solid #2f342e; border-radius: 12px; padding: 16px 18px;">
                 <tr>
                   <td width="46" valign="middle">
-                    <div style="width: 44px; height: 44px; border-radius: 10px; background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: #ffffff; font-weight: 700; font-size: 16px; line-height: 44px; text-align: center; text-transform: uppercase; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);">
+                    <div style="width: 42px; height: 42px; border-radius: 10px; background-color: #d2f96b; color: #171e0b; font-weight: 850; font-size: 16px; line-height: 42px; text-align: center; text-transform: uppercase; box-shadow: 0 4px 14px rgba(210, 249, 107, 0.28);">
                       ${initials}
                     </div>
                   </td>
                   <td style="padding-left: 14px;" valign="middle">
-                    <div style="color: #ffffff; font-size: 16px; font-weight: 600; line-height: 1.2;">
+                    <div style="color: #f1f2eb; font-size: 16px; font-weight: 650; letter-spacing: -0.2px;">
                       ${escapedName}
                     </div>
                     <div style="margin-top: 3px;">
-                      <a href="mailto:${escapedEmail}" style="color: #38bdf8; font-size: 13.5px; text-decoration: none; font-weight: 500;">
+                      <a href="mailto:${escapedEmail}" style="color: #b5a4ec; font-size: 13.5px; text-decoration: none; font-weight: 500;">
                         ${escapedEmail}
                       </a>
                     </div>
                   </td>
-                  <td align="right" valign="top" style="color: #64748b; font-size: 12px; white-space: nowrap; padding-top: 2px;">
-                    📅 ${formattedTime}
+                  <td align="right" valign="top" style="color: #a0a69e; font-size: 11px; white-space: nowrap; font-family: ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace; padding-top: 3px;">
+                    ${formattedTime}
                   </td>
                 </tr>
               </table>
             </td>
           </tr>
 
-          <!-- Message Body Section -->
+          <!-- Message Body (Obsidian Surface with Electric Lime Accent Border) -->
           <tr>
-            <td style="padding: 0 28px 26px 28px;">
-              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #0b1120; border-left: 4px solid #6366f1; border-top: 1px solid #1e293b; border-right: 1px solid #1e293b; border-bottom: 1px solid #1e293b; border-radius: 10px; padding: 20px 22px;">
+            <td style="padding: 0 32px 26px 32px;">
+              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #111312; border-left: 3px solid #d2f96b; border-top: 1px solid #262a25; border-right: 1px solid #262a25; border-bottom: 1px solid #262a25; border-radius: 8px; padding: 20px 22px;">
                 <tr>
                   <td>
-                    <div style="color: #818cf8; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px;">
-                      Message Content
+                    <div style="font-family: ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace; color: #a0a69e; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 12px;">
+                      // MESSAGE BODY
                     </div>
-                    <div style="color: #f1f5f9; font-size: 15px; line-height: 1.7; white-space: pre-wrap; word-break: break-word;">${escapedMessage}</div>
+                    <div style="color: #f1f2eb; font-size: 15px; line-height: 1.75; white-space: pre-wrap; word-break: break-word;">${escapedMessage}</div>
                   </td>
                 </tr>
               </table>
             </td>
           </tr>
 
-          <!-- Action Button: Reply directly -->
+          <!-- Primary CTA Button (Signature Lime Button from Frontend) -->
           <tr>
-            <td align="center" style="padding: 0 28px 30px 28px;">
+            <td align="center" style="padding: 0 32px 30px 32px;">
               <table role="presentation" border="0" cellspacing="0" cellpadding="0">
                 <tr>
-                  <td align="center" style="border-radius: 8px; background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%); box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4);">
-                    <a href="mailto:${escapedEmail}?subject=${replySubject}" style="display: inline-block; padding: 13px 30px; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 600; letter-spacing: 0.02em; border-radius: 8px;">
-                      ✉️ Reply to ${escapeHtml(firstName)}
+                  <td align="center" style="border-radius: 7px; background-color: #d2f96b; box-shadow: 0 6px 20px rgba(210, 249, 107, 0.22);">
+                    <a href="mailto:${escapedEmail}?subject=${replySubject}" style="display: inline-block; padding: 13px 30px; background-color: #d2f96b; color: #171e0b; text-decoration: none; font-size: 11px; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; border-radius: 7px;">
+                      Reply to ${escapeHtml(firstName)} &rarr;
                     </a>
                   </td>
                 </tr>
@@ -145,14 +162,19 @@ export async function sendContactNotification(message) {
             </td>
           </tr>
 
-          <!-- Subtle Footer -->
+          <!-- Subtle Footer matching site-footer -->
           <tr>
-            <td style="border-top: 1px solid #1a2438; padding: 18px 28px; background-color: #0c1220;">
+            <td style="border-top: 1px solid #242823; padding: 18px 32px; background-color: #121313;">
               <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
                 <tr>
-                  <td style="color: #64748b; font-size: 12px; line-height: 1.5;">
-                    Received via <strong style="color: #94a3b8;">Ronit Parmar's Portfolio</strong> contact form.<br>
-                    Hitting "Reply" in your mail client answers <strong style="color: #cbd5e1;">${escapedEmail}</strong> directly.
+                  <td style="color: #798076; font-size: 11px; line-height: 1.6;">
+                    Dispatched from <strong style="color: #a0a69e;">Ronit Parmar's Portfolio</strong>.<br>
+                    Replying answers <strong style="color: #d2f96b;">${escapedEmail}</strong> directly.
+                  </td>
+                  <td align="right" valign="middle">
+                    <span style="font-family: Georgia, 'Times New Roman', serif; font-style: italic; color: #b5a4ec; font-size: 17px; font-weight: 400;">
+                      RP
+                    </span>
                   </td>
                 </tr>
               </table>
