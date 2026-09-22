@@ -44,7 +44,7 @@ export async function getRepositories() {
 
   // Exclude forks, archived repos, and the portfolio repos themselves
   // (Portfolio and Portfolio_updated are meta-repos — not relevant as project showcases)
-  const EXCLUDED = new Set(['Portfolio', 'Portfolio_updated', 'PortFolio', 'ronit-portfolio', 'BRTS-Management', 'ronitparmar24']);
+  const EXCLUDED = new Set(['Portfolio', 'Portfolio_updated', 'PortFolio', 'ronit-portfolio', 'BRTS-Management', 'ronitparmar24', 'digiKhata', 'FlappyBirdV1']);
 
   const data = repositories
     .filter((repo) => !repo.fork && !repo.archived && !EXCLUDED.has(repo.name))

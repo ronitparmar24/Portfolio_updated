@@ -381,7 +381,7 @@ async function loadGithubRepositories() {
   if (!container) return;
 
   try {
-    const response = await fetch(`${API_BASE_URL}/github/repos?limit=6`);
+    const response = await fetch(`${API_BASE_URL}/github/repos?limit=4`);
     const result = await response.json();
     if (!result.success || !Array.isArray(result.data) || result.data.length === 0) {
       throw new Error('No repos returned');
