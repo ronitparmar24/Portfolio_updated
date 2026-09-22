@@ -424,8 +424,8 @@ loadGithubRepositories();
 
 /* ── More Builds toggle ─────────────────────────────── */
 (function initMoreBuildsToggle() {
-  const btn  = document.getElementById('more-builds-toggle');
-  const body = document.getElementById('more-builds-body');
+  const btn   = document.getElementById('more-builds-toggle');
+  const body  = document.getElementById('more-builds-body');
   const label = btn?.querySelector('.toggle-label');
   if (!btn || !body) return;
 
@@ -434,12 +434,7 @@ loadGithubRepositories();
     const next = !isExpanded;
 
     btn.setAttribute('aria-expanded', String(next));
+    body.classList.toggle('is-hidden', !next);
     if (label) label.textContent = next ? 'Hide' : 'Show';
-
-    if (next) {
-      body.hidden = false;
-    } else {
-      body.hidden = true;
-    }
   });
 })();
