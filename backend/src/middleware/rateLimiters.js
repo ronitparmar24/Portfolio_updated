@@ -27,3 +27,17 @@ export const contactLimiter = rateLimit({
   skipSuccessfulRequests: false,
   message: json('You have sent several messages already. Please try again later.')
 });
+
+/**
+ * Assistant AI chat: 15 questions per IP per hour.
+ * Protects against bot scrapers exhausting Groq organization API caps.
+ */
+export const assistantLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 15,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  skipSuccessfulRequests: false,
+  message: json('You have asked several questions already. Please try again in an hour, or email ronitparmar.work@gmail.com directly.')
+});
+

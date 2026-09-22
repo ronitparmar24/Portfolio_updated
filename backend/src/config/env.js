@@ -44,6 +44,8 @@ const envSchema = z.object({
 
   TURNSTILE_SECRET_KEY: z.string().optional(),
 
+  GROQ_API_KEY: z.string().min(1, 'GROQ_API_KEY is required').optional(),
+
   IP_HASH_SALT: z.string().min(8).default('portfolio-salt-ronit-secure-default')
 });
 
@@ -59,5 +61,6 @@ export const env = parsed.data;
 
 export const features = {
   email: Boolean(env.RESEND_API_KEY && env.OWNER_EMAIL),
-  turnstile: Boolean(env.TURNSTILE_SECRET_KEY)
+  turnstile: Boolean(env.TURNSTILE_SECRET_KEY),
+  assistant: Boolean(env.GROQ_API_KEY)
 };

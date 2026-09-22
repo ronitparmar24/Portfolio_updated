@@ -439,3 +439,121 @@ loadGithubRepositories();
     if (label) label.textContent = next ? 'Hide' : 'Show';
   });
 })();
+
+/* ── "Ask about Ronit" AI Assistant ─────────────────────────────── */
+(function initAssistant() {
+  const ASSISTANT_API =
+    typeof API_BASE_URL !== 'undefined'
+      ? API_BASE_URL
+      : (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:'
+        ? 'http://localhost:5000/api'
+        : 'https://YOUR-SERVICE.onrender.com/api');
+
+  const assistantDialog = document.querySelector('#assistant-dialog');
+  const assistantTrigger = document.querySelector('#assistant-trigger');
+  const assistantForm = document.querySelector('#assistant-form');
+  const assistantInput = document.querySelector('#assistant-input');
+  const assistantLog = document.querySelector('#assistant-log');
+
+  if (!assistantDialog || !assistantTrigger || !assistantForm || !assistantInput || !assistantLog) {
+    return;
+  }
+
+  const closeButton = assistantDialog.querySelector('.dialog-close');
+  const submitButton = assistantForm.querySelector('button[type="submit"]');
+
+  assistantTrigger.addEventListener('click', () => {
+    assistantDialog.showModal();
+    assistantDialog.scrollTop = 0;
+    document.body.style.overflow = 'hidden';
+    assistantInput.focus({ preventScroll: true });
+  });
+
+  closeButton?.addEventListener('click', () => assistantDialog.close());
+
+  assistantDialog.addEventListener('click', (e) => {
+    const bounds = assistantDialog.getBoundingClientRect();
+    if (
+      e.target === assistantDialog &&
+      (e.clientX < bounds.left || e.clientX > bounds.right || e.clientY < bounds.top || e.clientY > bounds.bottom)
+    ) {
+      assistantDialog.close();
+    }
+  });
+
+  assistantDialog.addEventListener('close', () => {
+    document.body.style.overflow = '';
+    assistantTrigger.focus({ preventScroll: true });
+  });
+
+  assistantDialog.querySelectorAll('.assistant-chip').forEach((chip) => {
+    chip.addEventListener('click', () => {
+      const q = chip.dataset.question;
+      if (q && !assistantInput.disabled) {
+        assistantInput.value = q;
+        if (typeof assistantForm.requestSubmit === 'function') {
+          assistantForm.requestSubmit();
+        } else {
+          assistantForm.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+        }
+      }
+    });
+  });
+
+  assistantForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const question = assistantInput.value.trim();
+    if (!question) return;
+
+    // 1. Append user message bubble (escaped via textContent)
+    const userBubble = document.createElement('div');
+    userBubble.className = 'assistant-msg assistant-msg-user';
+    userBubble.textContent = question;
+    assistantLog.append(userBubble);
+
+    // 2. Disable input and submit button
+    assistantInput.disabled = true;
+    if (submitButton) submitButton.disabled = true;
+
+    // 3. Append three-dot "typing" bubble
+    const botBubble = document.createElement('div');
+    botBubble.className = 'assistant-msg assistant-msg-bot assistant-msg-typing';
+    botBubble.textContent = 'Thinking…';
+    assistantLog.append(botBubble);
+    assistantLog.scrollTop = assistantLog.scrollHeight;
+
+    const fallbackMessage = "That's taking too long — try again in a moment, or email ronitparmar.work@gmail.com directly.";
+
+    try {
+      const response = await fetch(`${ASSISTANT_API}/assistant`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question }),
+        signal: AbortSignal.timeout(20000)
+      });
+
+      botBubble.classList.remove('assistant-msg-typing');
+
+      if (!response.ok) {
+        botBubble.textContent = fallbackMessage;
+      } else {
+        const result = await response.json();
+        if (result.success && result.answer) {
+          botBubble.textContent = result.answer;
+        } else {
+          botBubble.textContent = fallbackMessage;
+        }
+      }
+    } catch (_) {
+      botBubble.classList.remove('assistant-msg-typing');
+      botBubble.textContent = fallbackMessage;
+    } finally {
+      assistantInput.disabled = false;
+      if (submitButton) submitButton.disabled = false;
+      assistantInput.value = '';
+      assistantLog.scrollTop = assistantLog.scrollHeight;
+      assistantInput.focus({ preventScroll: true });
+    }
+  });
+})();
+

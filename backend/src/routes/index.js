@@ -1,10 +1,11 @@
 import { Router } from 'express';
 import { databaseStatus } from '../config/db.js';
 import { features } from '../config/env.js';
-import { contactLimiter } from '../middleware/rateLimiters.js';
+import { contactLimiter, assistantLimiter } from '../middleware/rateLimiters.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { createContactMessage } from '../controllers/contact.controller.js';
 import { listRepositories } from '../controllers/github.controller.js';
+import { askQuestion } from '../controllers/assistant.controller.js';
 
 export const router = Router();
 
@@ -29,3 +30,4 @@ router.get('/health', (req, res) => {
 
 router.post('/contact', contactLimiter, asyncHandler(createContactMessage));
 router.get('/github/repos', asyncHandler(listRepositories));
+router.post('/assistant', assistantLimiter, asyncHandler(askQuestion));
