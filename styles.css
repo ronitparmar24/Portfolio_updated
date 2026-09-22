@@ -448,6 +448,21 @@ dialog#assistant-dialog .dialog-close {
   opacity: 0.8;
   font-style: italic;
 }
+.assistant-msg a.assistant-link {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-weight: 600;
+  transition: color 0.2s, opacity 0.2s;
+  word-break: break-all;
+}
+[data-theme="light"] .assistant-msg a.assistant-link {
+  color: #4b6a18;
+}
+.assistant-msg a.assistant-link:hover {
+  opacity: 0.8;
+  text-decoration-thickness: 2px;
+}
 
 .assistant-form {
   display: flex;

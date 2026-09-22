@@ -506,6 +506,49 @@ loadGithubRepositories();
     });
   });
 
+  function formatAssistantMessage(text) {
+    if (!text) return '';
+    const links = [];
+    const addLink = (href, label) => {
+      const idx = links.length;
+      links.push(`<a href="${href}" target="_blank" rel="noopener noreferrer" class="assistant-link">${label} ↗</a>`);
+      return `___LINK_${idx}___`;
+    };
+    const addEmail = (email) => {
+      const idx = links.length;
+      links.push(`<a href="mailto:${email}" class="assistant-link">${email}</a>`);
+      return `___LINK_${idx}___`;
+    };
+
+    let safe = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+
+    safe = safe.replace(/\[([^\]]+)\]\(((?:https?:\/\/)[^\s)]+)\)/g, (_, label, url) => addLink(url, label));
+
+    safe = safe.replace(/(https?:\/\/[^\s<)]+)/g, (url) => {
+      const cleanUrl = url.replace(/[.,;!?)]+$/, '');
+      const trailing = url.slice(cleanUrl.length);
+      return addLink(cleanUrl, cleanUrl) + trailing;
+    });
+
+    safe = safe.replace(/(?:^|[\s(])((?:github\.com|[\w-]+\.vercel\.app)[^\s<)]*)/g, (match, url) => {
+      const prefix = match.slice(0, match.indexOf(url));
+      const cleanUrl = url.replace(/[.,;!?)]+$/, '');
+      const trailing = url.slice(cleanUrl.length);
+      return prefix + addLink(`https://${cleanUrl}`, cleanUrl) + trailing;
+    });
+
+    safe = safe.replace(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g, (email) => {
+      const cleanEmail = email.replace(/[.,;!?]+$/, '');
+      const trailing = email.slice(cleanEmail.length);
+      return addEmail(cleanEmail) + trailing;
+    });
+
+    return safe.replace(/___LINK_(\d+)___/g, (_, idx) => links[Number(idx)] || '');
+  }
+
   assistantForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const question = assistantInput.value.trim();
@@ -541,18 +584,18 @@ loadGithubRepositories();
       botBubble.classList.remove('assistant-msg-typing');
 
       if (!response.ok) {
-        botBubble.textContent = fallbackMessage;
+        botBubble.innerHTML = formatAssistantMessage(fallbackMessage);
       } else {
         const result = await response.json();
         if (result.success && result.answer) {
-          botBubble.textContent = result.answer;
+          botBubble.innerHTML = formatAssistantMessage(result.answer);
         } else {
-          botBubble.textContent = fallbackMessage;
+          botBubble.innerHTML = formatAssistantMessage(fallbackMessage);
         }
       }
     } catch (_) {
       botBubble.classList.remove('assistant-msg-typing');
-      botBubble.textContent = fallbackMessage;
+      botBubble.innerHTML = formatAssistantMessage(fallbackMessage);
     } finally {
       assistantInput.disabled = false;
       if (submitButton) submitButton.disabled = false;
