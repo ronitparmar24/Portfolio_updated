@@ -15,17 +15,18 @@ const projects = {
     github: 'https://github.com/ronitparmar24/MetroMind',
     live: 'https://metro-mind-lemon.vercel.app/'
   },
-  metroflow: {
-    name: 'MetroFlow',
-    description: 'A metro ticket booking system covering the complete rider journey, backed by Flask and MySQL.',
-    stack: ['HTML5', 'CSS3', 'JavaScript', 'Flask', 'MySQL'],
+  cinepulse: {
+    name: 'CinePulse',
+    description: 'A full-stack movie discovery and watchlist platform powered by the TMDB API, with a PostgreSQL backend and Python data layer.',
+    stack: ['TypeScript', 'JavaScript', 'CSS3', 'HTML5', 'PL/pgSQL', 'Python', 'TMDB API'],
     features: [
-      'Built the complete frontend in HTML, CSS, and JavaScript, paired with a Flask backend and MySQL database.',
-      'Implemented user-authentication and digital-wallet interfaces.',
-      'Created flows for QR ticket generation, downloadable PDF tickets, and monthly passes.',
-      'Built an admin analytics dashboard to support system management.'
+      'Built a responsive movie discovery UI with dynamic search, filters, and a curated trending feed using the TMDB API.',
+      'Designed and implemented a PostgreSQL schema with PL/pgSQL procedures to manage user watchlists and ratings.',
+      'Developed a Python data layer to sync TMDB metadata with the local database.',
+      'Deployed the live application on Vercel with continuous deployment via GitHub.'
     ],
-    github: 'https://github.com/ronitparmar24/metroflow'
+    github: 'https://github.com/ronitparmar24/cinepulse',
+    live: 'https://cinepulse-kohl.vercel.app/'
   },
   digikhata: {
     name: 'DigiKhata',
