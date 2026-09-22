@@ -23,6 +23,7 @@ const envSchema = z.object({
     ),
 
   MONGODB_URI: z.string().min(1, 'MONGODB_URI is required'),
+  MONGODB_DBNAME: z.string().default('portfolio'),
 
   RESEND_API_KEY: z.string().optional(),
   OWNER_EMAIL: z.string().email().optional(),
