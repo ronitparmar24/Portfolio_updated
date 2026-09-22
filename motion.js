@@ -32,12 +32,32 @@
   const manifesto = document.querySelector('.manifesto');
   const storyLines = [...document.querySelectorAll('.ink-line')];
   const heroArt = document.querySelector('.hero-art');
+  const heroSerif = document.querySelector('.hero h1 .serif-word');
+  const heroFirstLine = document.querySelector('.hero-line:first-child > span');
+
+  setTimeout(() => {
+    document.querySelectorAll('.hero-line').forEach(el => { el.style.overflow = 'visible'; });
+  }, 1400);
+
   let scrollPending = false;
   function updateScroll() {
     scrollPending = false;
     const range = document.documentElement.scrollHeight - innerHeight;
     progress.style.transform = `scaleX(${range > 0 ? clamp(scrollY / range, 0, 1) : 0})`;
     if (!motionAllowed()) return;
+
+    if (scrollY < 800) {
+      const heroPhase = clamp(scrollY / 450, 0, 1);
+      if (heroSerif) {
+        heroSerif.style.setProperty('--scroll-shift-x', `${heroPhase * 38}px`);
+        heroSerif.style.setProperty('--scroll-tracking', `${-2.5 + heroPhase * 2.2}px`);
+        heroSerif.style.setProperty('--scroll-opacity', `${1 - heroPhase * 0.35}`);
+      }
+      if (heroFirstLine) {
+        heroFirstLine.style.transform = `translate3d(${-heroPhase * 16}px, 0, 0)`;
+      }
+    }
+
     const r = manifesto.getBoundingClientRect();
     const phase = clamp((innerHeight * .91 - r.top) / (innerHeight * .6 + r.height * .1), 0, 1);
     storyLines.forEach((line, i) => line.style.setProperty('--ink-fill', `${clamp((phase - i * .2) * 1.7, 0, 1) * 100}%`));
