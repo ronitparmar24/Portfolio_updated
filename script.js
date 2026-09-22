@@ -462,28 +462,34 @@ loadGithubRepositories();
   const closeButton = assistantDialog.querySelector('.dialog-close');
   const submitButton = assistantForm.querySelector('button[type="submit"]');
 
-  assistantTrigger.addEventListener('click', () => {
+  assistantTrigger.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (assistantDialog.open) {
+      assistantDialog.close();
+      return;
+    }
     assistantDialog.showModal();
     assistantDialog.scrollTop = 0;
     document.body.style.overflow = 'hidden';
-    assistantInput.focus({ preventScroll: true });
+    setTimeout(() => {
+      assistantInput?.focus({ preventScroll: true });
+    }, 50);
   });
 
-  closeButton?.addEventListener('click', () => assistantDialog.close());
+  closeButton?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    assistantDialog.close();
+  });
 
   assistantDialog.addEventListener('click', (e) => {
-    const bounds = assistantDialog.getBoundingClientRect();
-    if (
-      e.target === assistantDialog &&
-      (e.clientX < bounds.left || e.clientX > bounds.right || e.clientY < bounds.top || e.clientY > bounds.bottom)
-    ) {
+    if (e.target === assistantDialog) {
       assistantDialog.close();
     }
   });
 
   assistantDialog.addEventListener('close', () => {
     document.body.style.overflow = '';
-    assistantTrigger.focus({ preventScroll: true });
+    assistantTrigger?.focus({ preventScroll: true });
   });
 
   assistantDialog.querySelectorAll('.assistant-chip').forEach((chip) => {
