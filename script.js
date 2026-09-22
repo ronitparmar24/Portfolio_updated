@@ -226,11 +226,12 @@ document.querySelector('#year').textContent = new Date().getFullYear();
 
 /* --- Backend Integration: Contact Form & GitHub Repositories --- */
 const API_BASE_URL =
-  location.hostname === 'localhost' ||
+  window.PORTFOLIO_API_URL ||
+  (location.hostname === 'localhost' ||
   location.hostname === '127.0.0.1' ||
   location.protocol === 'file:'
     ? 'http://localhost:5000/api'
-    : 'https://YOUR-SERVICE.onrender.com/api';
+    : '/api');
 
 /**
  * Wake up the API on page load (Render free instances sleep after inactivity).

@@ -42,9 +42,11 @@ app.use(
     origin(origin, callback) {
       // No Origin header = curl, Postman, or a server-to-server call.
       // Origin 'null' is sent when opening local HTML files directly (file://).
+      const isVercelDomain = origin && (origin.endsWith('.vercel.app') || origin.includes('vercel.app'));
       if (
         !origin ||
         origin === 'null' ||
+        isVercelDomain ||
         env.ALLOWED_ORIGINS.includes(origin) ||
         (env.NODE_ENV === 'development' && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin))
       ) {
@@ -62,7 +64,9 @@ app.use(
 app.use(express.json({ limit: '20kb' }));
 app.use(globalLimiter);
 
+// Support both /api/* and direct route rewrites from Vercel
 app.use('/api', router);
+app.use(router);
 
 app.get('/', (req, res) => {
   res.json({ success: true, message: 'Portfolio API. See /api/health.' });

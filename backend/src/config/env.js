@@ -34,7 +34,7 @@ const envSchema = z.object({
 
   TURNSTILE_SECRET_KEY: z.string().optional(),
 
-  IP_HASH_SALT: z.string().min(8, 'IP_HASH_SALT must be at least 8 characters')
+  IP_HASH_SALT: z.string().min(8).default('portfolio-salt-ronit-secure-default')
 });
 
 const parsed = envSchema.safeParse(process.env);

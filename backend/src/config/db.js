@@ -8,18 +8,30 @@ import { env } from './env.js';
  * string or a missing Atlas IP allowlist entry fails fast, instead of leaving
  * requests hanging until the platform's own timeout kills them.
  */
+let cachedPromise = null;
+
 export async function connectDatabase() {
+  if (mongoose.connection.readyState === 1) {
+    return mongoose.connection;
+  }
+  if (mongoose.connection.readyState === 2 && cachedPromise) {
+    return cachedPromise;
+  }
+
   mongoose.set('strictQuery', true);
 
-  await mongoose.connect(env.MONGODB_URI, {
+  cachedPromise = mongoose.connect(env.MONGODB_URI, {
     serverSelectionTimeoutMS: 8000,
     maxPoolSize: 10
   });
 
+  await cachedPromise;
   console.log('[db] connected');
 
   mongoose.connection.on('disconnected', () => console.warn('[db] disconnected'));
   mongoose.connection.on('error', (error) => console.error('[db] error:', error.message));
+
+  return mongoose.connection;
 }
 
 export function databaseStatus() {
