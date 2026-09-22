@@ -131,6 +131,9 @@
   font-weight: 600;
   transition: opacity 0.2s;
 }
+.cf-turnstile {
+  margin: 6px 0 16px 0;
+}
 .button-submit {
   background: #171e0b;
   color: var(--accent);
