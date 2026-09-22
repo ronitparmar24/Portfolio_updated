@@ -301,6 +301,9 @@
 
 /* Scoped dedicated widget window */
 dialog#assistant-dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
   width: min(440px, calc(100vw - 32px));
   height: min(560px, 85vh);
   max-height: 85vh;
@@ -312,6 +315,7 @@ dialog#assistant-dialog {
   box-shadow: 0 30px 120px rgba(0, 0, 0, 0.65);
   overscroll-behavior: contain;
   overflow: hidden;
+  z-index: 1000;
 }
 dialog#assistant-dialog::backdrop {
   background: #080c0ad0;
