@@ -58,18 +58,21 @@ export async function createContactMessage(req, res) {
     userAgent: req.get('user-agent')?.slice(0, 300) ?? null
   });
 
-  // The message is already safely stored, so email failure must not fail the request.
-  // Respond first, deliver the notification afterwards.
-  res.status(201).json({
-    success: true,
-    message: 'Thanks — your message has been sent. I usually reply within a day.',
-    data: { id: saved._id }
-  });
-
+  // Deliver email notification before concluding the serverless function execution.
+  // Wrapped in try/catch so email transport failure never drops a message that was already saved to DB.
+  let emailDelivered = false;
   try {
-    const delivered = await sendContactNotification(saved);
-    if (delivered) await ContactMessage.updateOne({ _id: saved._id }, { emailDelivered: true });
+    emailDelivered = await sendContactNotification(saved);
+    if (emailDelivered) {
+      await ContactMessage.updateOne({ _id: saved._id }, { emailDelivered: true });
+    }
   } catch (error) {
     console.error('[contact] notification failed:', error.message);
   }
+
+  return res.status(201).json({
+    success: true,
+    message: 'Thanks — your message has been sent. I usually reply within a day.',
+    data: { id: saved._id, emailDelivered }
+  });
 }
