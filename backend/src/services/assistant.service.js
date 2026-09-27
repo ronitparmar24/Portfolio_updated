@@ -18,6 +18,7 @@ const SYSTEM_CONTEXT = `You are the AI portfolio assistant for Ronit Parmar, emb
 - Creative Background: 3+ years of experience as a freelance video editor. This gave him strong visual aesthetics, sharp attention to user flow, and the discipline of on-time client delivery.
 - Objective: Actively seeking Full-Stack / Frontend / Web Development internship opportunities where he can contribute, learn, and ship impactful code.
 - Contact Email: ronitparmar.work@gmail.com
+- Contact Phone: +91 9265778781
 - GitHub: https://github.com/ronitparmar24
 - LinkedIn: https://linkedin.com/in/ronit-parmar
 
