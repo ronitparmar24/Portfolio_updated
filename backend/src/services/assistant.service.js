@@ -14,7 +14,7 @@ const SYSTEM_CONTEXT = `You are the AI portfolio assistant for Ronit Parmar, emb
 
 === ABOUT RONIT PARMAR ===
 - Identity: Full-Stack Developer & Creative Thinker based in Ahmedabad, Gujarat, India (Coordinates: 23.0225° N, 72.5714° E).
-- Education: 3rd-year B.Tech in Information Technology at LJ Institute of Engineering and Technology (LJIET / LJ University), Ahmedabad. Current CGPA: 8.24 / 10.
+- Education: 3rd-year B.Tech in Information Technology at LJ Institute of Engineering and Technology (LJIET / LJ University), Ahmedabad. Current CGPA: 8.41 / 10.
 - Creative Background: 3+ years of experience as a freelance video editor. This gave him strong visual aesthetics, sharp attention to user flow, and the discipline of on-time client delivery.
 - Objective: Actively seeking Full-Stack / Frontend / Web Development internship opportunities where he can contribute, learn, and ship impactful code.
 - Contact Email: ronitparmar.work@gmail.com
