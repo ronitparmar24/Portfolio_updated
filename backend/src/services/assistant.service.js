@@ -153,55 +153,61 @@ export async function askAssistantStream({
           continue; // Attempt fallback model
         }
 
-        if (!response.body) {
-          throw new Error('Groq response body is empty');
-        }
+        if (response.body && typeof response.body.getReader === 'function') {
+          // Real SSE stream from Groq
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder('utf-8');
+          let buffer = '';
+          let modelProducedTokens = false;
 
-        // Stream and parse SSE chunks from Groq
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder('utf-8');
-        let buffer = '';
-        let modelProducedTokens = false;
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
 
-        try {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
+              buffer += decoder.decode(value, { stream: true });
+              const lines = buffer.split('\n');
+              buffer = lines.pop() || '';
 
-            buffer += decoder.decode(value, { stream: true });
-            const lines = buffer.split('\n');
-            buffer = lines.pop() || '';
+              for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed || trimmed.startsWith(':')) continue;
+                if (trimmed === 'data: [DONE]') continue;
 
-            for (const line of lines) {
-              const trimmed = line.trim();
-              if (!trimmed || trimmed.startsWith(':')) continue;
-              if (trimmed === 'data: [DONE]') continue;
-
-              if (trimmed.startsWith('data: ')) {
-                const jsonStr = trimmed.slice(6);
-                try {
-                  const data = JSON.parse(jsonStr);
-                  const token = data.choices?.[0]?.delta?.content;
-                  if (token) {
-                    modelProducedTokens = true;
-                    accumulatedAnswer += token;
-                    onToken(token);
+                if (trimmed.startsWith('data: ')) {
+                  const jsonStr = trimmed.slice(6);
+                  try {
+                    const data = JSON.parse(jsonStr);
+                    const token = data.choices?.[0]?.delta?.content;
+                    if (token) {
+                      modelProducedTokens = true;
+                      accumulatedAnswer += token;
+                      onToken(token);
+                    }
+                  } catch (_) {
+                    // Ignore JSON parse errors on partial chunks
                   }
-                } catch (_) {
-                  // Ignore JSON parse errors on partial chunks
                 }
               }
             }
+          } catch (streamErr) {
+            if (modelProducedTokens) {
+              throw streamErr;
+            }
+            console.warn(`[assistant] stream error on ${model} before tokens:`, streamErr.message);
+            lastError = streamErr;
+            continue;
           }
-        } catch (streamErr) {
-          // If the model threw an error mid-stream after emitting tokens, we cannot cleanly restart
-          if (modelProducedTokens) {
-            throw streamErr;
+        } else if (typeof response.json === 'function') {
+          // Non-streaming response / mock fallback
+          const data = await response.json();
+          const rawAnswer = data.choices?.[0]?.message?.content || data.choices?.[0]?.delta?.content || '';
+          if (rawAnswer) {
+            accumulatedAnswer = rawAnswer;
+            onToken(rawAnswer);
           }
-          // If it failed before any tokens, fall back to next model
-          console.warn(`[assistant] stream error on ${model} before tokens:`, streamErr.message);
-          lastError = streamErr;
-          continue;
+        } else {
+          throw new Error('Groq response body is empty');
         }
 
         const finalAnswer = accumulatedAnswer.trim();

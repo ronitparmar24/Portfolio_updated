@@ -1,0 +1,259 @@
+{
+  "profile": {
+    "name": "Ronit Parmar",
+    "headline": "Full-Stack Developer & Creative Thinker",
+    "location": "Ahmedabad, Gujarat, India (Coordinates: 23.0225° N, 72.5714° E)",
+    "education": {
+      "degree": "B.Tech in Information Technology (3rd year)",
+      "institution": "LJ Institute of Engineering & Technology (LJIET / LJ University), Ahmedabad",
+      "cgpa": "8.41 / 10",
+      "status": "Currently pursuing (Expected graduation: 2026)"
+    },
+    "freelanceExperience": {
+      "years": "3+ years",
+      "role": "Freelance Video Editor & Visual Designer",
+      "description": "3+ years of professional video editing and visual storytelling for digital creators and brands. Cultivated a keen eye for visual aesthetics, animation pacing, UI/UX interaction flow, and meticulous deadline discipline."
+    },
+    "internshipAvailability": {
+      "status": "Actively seeking Full-Stack, Frontend, or Web Development internships",
+      "targetRoles": [
+        "Full-Stack Developer Intern",
+        "Frontend Developer Intern",
+        "Web Developer Intern",
+        "Software Engineer Intern"
+      ],
+      "startDate": "Flexible; coordinated directly with hiring managers based on academic terms",
+      "locationPreference": "Ahmedabad (On-site / Hybrid) or Remote anywhere",
+      "contactToHire": "ronitparmar.work@gmail.com"
+    },
+    "contact": {
+      "email": "ronitparmar.work@gmail.com",
+      "phone": "+91 9265778781",
+      "github": "https://github.com/ronitparmar24",
+      "linkedin": "https://linkedin.com/in/ronit-parmar",
+      "resumeUrl": "./assets/Ronit_Parmar_Resume.pdf",
+      "portfolioUrl": "https://ronitparmar.vercel.app/"
+    }
+  },
+  "skills": {
+    "frontend": [
+      "React.js",
+      "Vite",
+      "TypeScript",
+      "Modern JavaScript (ES6+)",
+      "HTML5 & Semantic Markup",
+      "CSS3 & Vanilla CSS",
+      "Responsive & Mobile-First Design",
+      "CSS Micro-animations & Motion",
+      "DOM Manipulation & Canvas APIs"
+    ],
+    "backend": [
+      "Node.js",
+      "Express.js",
+      "Python",
+      "Flask",
+      "Django REST Framework",
+      "RESTful API Design & Best Practices",
+      "Server-Sent Events (SSE) Streaming",
+      "Serverless Functions (Vercel Functions)"
+    ],
+    "databases": [
+      "MongoDB & Mongoose (Document databases, aggregation pipelines)",
+      "PostgreSQL (Relational modeling, PL/pgSQL stored procedures)",
+      "MySQL (Queries, joins, indexing)",
+      "SQLite (Local storage, testing)"
+    ],
+    "toolsAndPractices": [
+      "Git & GitHub (Version control, branching, PR workflows)",
+      "Vercel Deployment & Serverless hosting",
+      "Cloudflare Turnstile (Bot protection)",
+      "Postman (API testing & documentation)",
+      "3-Tier Architecture & Clean Code",
+      "Rate Limiting & Security Hardening (Helmet, CORS)",
+      "scikit-learn (Machine Learning crowd density models)"
+    ]
+  },
+  "projects": [
+    {
+      "id": "metromind",
+      "name": "MetroMind",
+      "tagline": "Intelligent Smart Metro Ticketing Platform with ML Crowd Prediction",
+      "problem": "Urban metro commuters endure long ticket counter queues and face unpredictable train congestion during peak hours without real-time density guidance.",
+      "stack": [
+        "React",
+        "Vite",
+        "Node.js",
+        "Express",
+        "Django REST",
+        "MongoDB Atlas",
+        "scikit-learn",
+        "Vercel"
+      ],
+      "features": [
+        "Digital metro ticket booking with QR pass generation",
+        "commuter crowd density prediction powered by scikit-learn ML models",
+        "Dynamic fare calculation based on station distance and train schedules",
+        "Dual-backend architecture separating ML analytics from transactional bookings",
+        "Clean, responsive commuter dashboard built with React and Vite"
+      ],
+      "role": "Solo full-stack engineer: designed database schemas, built React UI, developed Express ticketing service, and trained the Django REST ML crowd prediction microservice.",
+      "challenges": "Decoupling the ML prediction service from transaction processing to prevent data-heavy machine learning queries from slowing down high-volume ticket checkouts.",
+      "liveUrl": "https://metro-mind-lemon.vercel.app/",
+      "githubUrl": "https://github.com/ronitparmar24/MetroMind",
+      "isFlagship": true
+    },
+    {
+      "id": "cinepulse",
+      "name": "CinePulse",
+      "tagline": "Cinema Discovery & Personalized Watchlist Hub",
+      "problem": "Casual moviegoers find mainstream movie portals ad-heavy, slow, and lacking unified personal watchlist curation across genres.",
+      "stack": [
+        "React",
+        "Vite",
+        "Node.js",
+        "Express",
+        "PostgreSQL",
+        "PL/pgSQL",
+        "TMDB API",
+        "Vercel"
+      ],
+      "features": [
+        "Real-time movie and TV series search powered by TMDB API proxy",
+        "Personalized watchlist and favorites curation stored in PostgreSQL",
+        "PL/pgSQL stored procedures for relational data integrity and swift query execution",
+        "Rich modal cards with trailers, release details, and actor filmography",
+        "Dark-mode cinema aesthetic with smooth UI micro-animations"
+      ],
+      "role": "Architected the relational PostgreSQL schemas, authored stored procedures in PL/pgSQL, implemented Express proxy caching, and built the sleek React movie interface.",
+      "challenges": "Optimizing TMDB API rate-limited queries while keeping user custom lists synchronized in PostgreSQL with zero UI lag.",
+      "liveUrl": "https://cinepulse-kohl.vercel.app/",
+      "githubUrl": "https://github.com/ronitparmar24/Cinepulse",
+      "isFlagship": true
+    },
+    {
+      "id": "digikhata",
+      "name": "DigiKhata",
+      "tagline": "Digital Ledger & Accounts Management for Small Merchants",
+      "problem": "Small shopkeepers and freelance vendors rely on paper ledgers (bahi-khata), risking misplaced records, calculation errors, and missed credit collections.",
+      "stack": [
+        "React",
+        "Node.js",
+        "Express",
+        "MongoDB",
+        "Mongoose",
+        "CSS Modules"
+      ],
+      "features": [
+        "Credit and debit transaction logging with balance calculations",
+        "Customer debt records with reminder timestamp tracking",
+        "Exportable account transaction histories and summaries",
+        "Robust input validation to prevent financial discrepancy records"
+      ],
+      "role": "Full-stack developer: formulated the ledger accounting schema in MongoDB, engineered Express CRUD endpoints, and built an intuitive mobile-friendly bookkeeping UI.",
+      "challenges": "Ensuring transactional consistency during rapid balance ledger entries without race conditions in MongoDB.",
+      "liveUrl": null,
+      "githubUrl": "https://github.com/ronitparmar24/digiKhata",
+      "isFlagship": false
+    },
+    {
+      "id": "brts-management",
+      "name": "BRTS Management System",
+      "tagline": "Bus Rapid Transit System Route & Schedule Optimization",
+      "problem": "City commuters face difficulty identifying direct bus corridors, transfer stations, and accurate transit schedules across urban networks.",
+      "stack": [
+        "Python",
+        "Flask",
+        "MySQL",
+        "HTML5",
+        "CSS3",
+        "JavaScript"
+      ],
+      "features": [
+        "Comprehensive corridor and bus station mapping with route search",
+        "Timetable scheduling and estimated arrival calculation across stops",
+        "Administrator panel for managing bus fleets, drivers, and route additions",
+        "Relational MySQL database managing stations, routes, and transit passes"
+      ],
+      "role": "Developed the Flask routing server, designed the relational MySQL database schema, and implemented multi-stop transit lookup algorithms.",
+      "challenges": "Structuring complex relational joins across buses, routes, and transit stops without degrading search query response times.",
+      "liveUrl": null,
+      "githubUrl": "https://github.com/ronitparmar24/BRTS-Management",
+      "isFlagship": false
+    },
+    {
+      "id": "flappy-bird",
+      "name": "Flappy Bird Recreation (FlappyBirdV1)",
+      "tagline": "Classic Arcade Physics & Collision Engine",
+      "problem": "Exploring foundational game loops, kinematic physics equations, and high-frequency collision detection in native programming environments.",
+      "stack": [
+        "Java",
+        "Java Swing / AWT",
+        "OOP Principles"
+      ],
+      "features": [
+        "Kinematic gravity and jump acceleration physics model",
+        "Bounding-box collision detection for obstacles and floor boundaries",
+        "Persistent high score tracker and state machine (Start, Playing, Game Over)",
+        "Sprite animation rendering running at 60 FPS"
+      ],
+      "role": "Implemented OOP game architecture, physics equations, collision detection logic, and high score persistence.",
+      "challenges": "Eliminating frame-rate stuttering and input lag on jump trigger events to ensure pixel-perfect collision precision.",
+      "liveUrl": null,
+      "githubUrl": "https://github.com/ronitparmar24/FlappyBirdV1",
+      "isFlagship": false
+    }
+  ],
+  "achievements": [
+    {
+      "title": "2nd Runner-Up — Prompt Craft Competition",
+      "event": "Lakshya 2.0 (National-level Technical Symposium)",
+      "year": "2024",
+      "description": "Secured 2nd Runner-Up position in Prompt Craft, competing against top university students in multi-step AI prompt engineering, reasoning workflows, and LLM output steering under strict time constraints."
+    },
+    {
+      "title": "Research Paper Presentation — Swarm Intelligence",
+      "event": "ICRAET (International Conference on Recent Advances in Engineering & Technology)",
+      "year": "2024",
+      "description": "Authored and presented academic research on Swarm Intelligence algorithms and collaborative agent optimization models for distributed computational problem-solving."
+    }
+  ],
+  "certifications": [
+    {
+      "name": "Web Development Specialization",
+      "issuer": "Coursera / FreeCodeCamp",
+      "topics": "HTML5, CSS3, Modern JavaScript, RESTful architectures"
+    },
+    {
+      "name": "Python & Data Structures",
+      "issuer": "NPTEL / Coursera",
+      "topics": "Python programming, object-oriented concepts, algorithms"
+    },
+    {
+      "name": "Database Management Systems (DBMS)",
+      "issuer": "LJIET Academic Curriculum",
+      "topics": "Relational algebra, SQL, indexing, normalization, transactions"
+    }
+  ],
+  "faq": [
+    {
+      "category": "experience",
+      "question": "Does Ronit have full-time corporate work experience?",
+      "answer": "No. Ronit is currently a 3rd-year B.Tech Information Technology student at LJ University (CGPA 8.41/10). He brings 3+ years of professional freelance video editing experience alongside multiple production-ready full-stack software applications (MetroMind, CinePulse, DigiKhata)."
+    },
+    {
+      "category": "internship",
+      "question": "What kind of internships is Ronit looking for?",
+      "answer": "Ronit is looking for Full-Stack Developer, Frontend Developer, or Web Developer internships where he can build scalable user interfaces (React/TypeScript) and robust backends (Node.js/Express, Python/Django REST/Flask, PostgreSQL/MongoDB). His start date and schedule are flexible."
+    },
+    {
+      "category": "flagship",
+      "question": "What is the best project to look at first?",
+      "answer": "MetroMind is Ronit's flagship project. It is a full-stack smart metro ticketing platform with a dual-backend architecture: Django REST with scikit-learn for ML crowd density prediction, plus Node.js/Express with MongoDB for commuter bookings and digital passes."
+    },
+    {
+      "category": "contact",
+      "question": "How can recruiters contact Ronit?",
+      "answer": "Recruiters can contact Ronit directly by emailing ronitparmar.work@gmail.com, calling +91 9265778781, or messaging him on LinkedIn (https://linkedin.com/in/ronit-parmar). He typically responds within 24 hours."
+    }
+  ]
+}
