@@ -273,58 +273,115 @@
 
 .cine-visual{background:#e8d9b8;color:#5c4419}.cine-grain{position:absolute;inset:0;background-image:radial-gradient(#b89a6055 1px,transparent 1px);background-size:14px 14px;opacity:.5}.cine-window{position:absolute;left:50%;top:53%;width:270px;transform:translate(-50%,-50%) rotate(-7deg);border-radius:10px;background:#fffdf7;box-shadow:0 15px 30px #5c441920;padding:16px 18px;transition:transform .5s}.project-visual:hover .cine-window{transform:translate(-50%,-52%) rotate(-2deg)}.cine-search{display:flex;align-items:center;gap:7px;padding:6px 10px;background:#f5efdf;border:1px solid #d9c9a0;border-radius:20px;font-size:8px;color:#a0884a;margin-bottom:11px}.cine-search>span:first-child{font-size:11px;line-height:1}.cine-trending{display:inline-flex;align-items:center;gap:5px;font-size:6px;font-weight:700;letter-spacing:1px;background:#f5c842;color:#5c4419;padding:4px 9px;border-radius:4px;margin-bottom:12px}.cine-posters{display:flex;gap:6px;align-items:flex-end}.cine-poster{flex:1;aspect-ratio:2/3;border-radius:4px;background:#d9c9a0;box-shadow:0 4px 10px #5c441915;position:relative;overflow:hidden}.cine-poster:nth-child(1){background:linear-gradient(160deg,#c9b48a,#a88a5a)}.cine-poster:nth-child(2){background:linear-gradient(160deg,#8a9fc9,#5a72a8)}.cine-poster:nth-child(3){background:linear-gradient(160deg,#c98a9a,#a85a72)}.cine-poster:nth-child(4){background:linear-gradient(160deg,#8ac9a0,#5aa872)}.cine-poster-active{transform:scale(1.08);z-index:2;box-shadow:0 6px 18px #5c441930;border:1.5px solid #f5c84288}.cine-rating{position:absolute;bottom:5px;left:5px;font-size:7px;font-weight:700;background:#1a140a;color:#f5c842;padding:2px 5px;border-radius:3px;white-space:nowrap;line-height:1.4}
 
-/* --- "Ask about Ronit" Dedicated Floating AI Chat Widget --- */
-.assistant-fab {
+/* --- "Ask about Ronit" Dedicated Floating Portfolio Guide & Docked Panel --- */
+.assistant-launcher-wrap {
   position: fixed;
   bottom: 28px;
   right: 28px;
-  width: 54px;
-  height: 54px;
-  background: var(--accent);
-  color: var(--accent-ink);
-  z-index: 40;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  display: inline-flex;
+  z-index: 45;
+  display: flex;
   align-items: center;
-  justify-content: center;
-}
-.assistant-fab .icon {
-  width: 24px;
-  height: 24px;
-}
-.assistant-fab:hover {
-  transform: scale(1.08) rotate(-6deg);
-  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
 }
 
-/* Scoped dedicated widget window */
-dialog#assistant-dialog {
+.assistant-fab {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 16px 6px 7px;
+  border-radius: 9999px;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  color: var(--text);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.38);
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: -0.2px;
+  cursor: pointer;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s, border-color 0.25s, background-color 0.25s;
+}
+
+.assistant-fab:hover {
+  transform: translateY(-3px) scale(1.02);
+  border-color: var(--accent);
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.5);
+  background: var(--surface);
+}
+
+.assistant-fab:focus-visible {
+  outline: 2px solid var(--purple);
+  outline-offset: 3px;
+}
+
+.assistant-fab-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 0 16px rgba(210, 249, 107, 0.3);
+  transition: transform 0.25s ease;
+}
+
+.assistant-fab:hover .assistant-fab-icon {
+  transform: rotate(-6deg) scale(1.05);
+}
+
+.assistant-fab-icon .icon {
+  width: 20px;
+  height: 20px;
+}
+
+.assistant-fab-pill {
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+/* Docked bottom-right panel on desktop */
+dialog#assistant-dialog.assistant-docked-panel {
   position: fixed;
-  inset: 0;
-  margin: auto;
-  width: min(440px, calc(100vw - 32px));
-  height: min(560px, 85vh);
-  max-height: 85vh;
+  inset: auto 28px 90px auto;
+  margin: 0;
+  width: 420px;
+  height: 600px;
+  max-height: calc(100vh - 110px);
   padding: 0;
   border: 1px solid var(--line);
   border-radius: 20px;
   background: var(--bg);
   color: var(--text);
-  box-shadow: 0 30px 120px rgba(0, 0, 0, 0.65);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55), 0 0 0 1px var(--line);
   overscroll-behavior: contain;
   overflow: hidden;
   z-index: 1000;
+  display: none;
 }
-dialog#assistant-dialog::backdrop {
-  background: #080c0ad0;
-  backdrop-filter: blur(8px);
+
+dialog#assistant-dialog.assistant-docked-panel[open] {
+  display: flex;
+  flex-direction: column;
+  animation: assistantDockIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
-@keyframes assistantPopIn {
+
+/* Desktop: backdrop does NOT block clicks on the portfolio */
+dialog#assistant-dialog.assistant-docked-panel::backdrop {
+  display: none;
+  background: transparent;
+  pointer-events: none;
+}
+
+@keyframes assistantDockIn {
   from {
     opacity: 0;
-    transform: translateY(12px) scale(0.96);
+    transform: translateY(16px) scale(0.97);
   }
   to {
     opacity: 1;
@@ -336,7 +393,7 @@ dialog#assistant-dialog::backdrop {
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: 18px 18px 12px;
+  padding: 16px 18px 12px;
   overflow: hidden;
 }
 
@@ -348,27 +405,40 @@ dialog#assistant-dialog::backdrop {
   border-bottom: 1px solid var(--line);
   flex-shrink: 0;
 }
+
 .assistant-header-info {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
+
 .assistant-header-status {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 8px;
-  font-weight: 700;
-  letter-spacing: 1.2px;
+  font-size: 8.5px;
+  font-weight: 750;
+  letter-spacing: 1.3px;
   color: var(--accent);
 }
+
+[data-theme="light"] .assistant-header-status {
+  color: #4b6a18;
+}
+
 .assistant-header-status .status-dot {
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
   background: var(--accent);
   border-radius: 50%;
   box-shadow: 0 0 8px var(--accent);
 }
+
+[data-theme="light"] .assistant-header-status .status-dot {
+  background: #547b16;
+  box-shadow: 0 0 8px #547b16;
+}
+
 dialog#assistant-dialog h2#assistant-title {
   font-size: 17px;
   font-weight: 650;
@@ -376,94 +446,372 @@ dialog#assistant-dialog h2#assistant-title {
   color: var(--text);
   margin: 0;
 }
-dialog#assistant-dialog .dialog-close {
-  position: static;
+
+.assistant-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.assistant-header-btn {
   width: 32px;
   height: 32px;
-}
-
-.assistant-prompts {
-  display: flex;
-  gap: 6px;
-  overflow-x: auto;
-  padding: 10px 0 6px;
-  scrollbar-width: none;
-  flex-shrink: 0;
-}
-.assistant-prompts::-webkit-scrollbar {
-  display: none;
-}
-.assistant-chip {
-  padding: 5px 11px;
-  font-size: 10px;
-  font-weight: 600;
-  border-radius: 20px;
-  background: var(--surface);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 50%;
   color: var(--muted);
-  white-space: nowrap;
-  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.2s;
   cursor: pointer;
 }
-.assistant-chip:hover {
-  color: var(--text);
+
+.assistant-header-btn:hover {
   background: var(--surface-raised);
+  color: var(--text);
   border-color: var(--accent);
+  transform: scale(1.05);
 }
 
+.assistant-header-btn .icon {
+  width: 15px;
+  height: 15px;
+}
+
+/* Chat thread */
 .assistant-log {
   flex: 1;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin: 8px 0;
+  gap: 14px;
+  margin: 10px 0;
   padding-right: 4px;
   scrollbar-width: thin;
   scrollbar-color: var(--line) transparent;
 }
-.assistant-msg {
-  font-size: 12px;
+
+/* Welcome state */
+.assistant-welcome {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 6px 2px;
+}
+
+.assistant-welcome-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px 15px;
+}
+
+.assistant-welcome-card p {
+  font-size: 13.5px;
   line-height: 1.6;
-  padding: 9px 13px;
-  border-radius: 12px;
-  max-width: 90%;
+  color: var(--text);
+  margin: 0;
+}
+
+.assistant-welcome-card small {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+.assistant-starters {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.assistant-starters-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.assistant-starters-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.assistant-chip {
+  padding: 7px 12px;
+  font-size: 11.5px;
+  font-weight: 600;
+  border-radius: 18px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--text);
+  white-space: normal;
+  text-align: left;
+  transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.2s;
+  cursor: pointer;
+  line-height: 1.35;
+}
+
+.assistant-chip:hover {
+  color: var(--text);
+  background: var(--surface-raised);
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.assistant-chip:focus-visible {
+  outline: 2px solid var(--purple);
+  outline-offset: 1px;
+}
+
+/* Message Bubbles */
+.assistant-msg {
+  position: relative;
+  font-size: 13.5px;
+  line-height: 1.62;
   word-break: break-word;
 }
-.assistant-msg-bot {
-  background: var(--surface);
-  color: var(--text);
-  align-self: flex-start;
-  border-bottom-left-radius: 3px;
-  border: 1px solid var(--line);
-}
+
 .assistant-msg-user {
+  align-self: flex-end;
   background: var(--accent);
   color: var(--accent-ink);
-  align-self: flex-end;
-  border-bottom-right-radius: 3px;
+  padding: 10px 15px;
+  border-radius: 16px 16px 3px 16px;
   font-weight: 600;
+  max-width: 86%;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
-.assistant-msg-typing {
-  opacity: 0.8;
-  font-style: italic;
+
+.assistant-msg-bot {
+  align-self: flex-start;
+  background: var(--surface);
+  color: var(--text);
+  padding: 13px 16px;
+  border-radius: 16px 16px 16px 3px;
+  border: 1px solid var(--line);
+  max-width: 92%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
+
+.assistant-bot-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 9.5px;
+  letter-spacing: 0.8px;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 6px;
+}
+
+.assistant-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.assistant-copy-btn:hover {
+  background: var(--surface-raised);
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.assistant-copy-btn.copied {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+[data-theme="light"] .assistant-copy-btn.copied {
+  color: #4b6a18;
+  border-color: #4b6a18;
+}
+
+.assistant-copy-btn .icon {
+  width: 12px;
+  height: 12px;
+}
+
+.assistant-msg-body {
+  white-space: pre-wrap;
+  color: var(--text);
+}
+
 .assistant-msg a.assistant-link {
   color: var(--accent);
   text-decoration: underline;
   text-underline-offset: 3px;
-  font-weight: 600;
-  transition: color 0.2s, opacity 0.2s;
-  word-break: break-all;
+  font-weight: 650;
+  transition: opacity 0.2s;
 }
+
 [data-theme="light"] .assistant-msg a.assistant-link {
-  color: #4b6a18;
+  color: #446416;
 }
+
 .assistant-msg a.assistant-link:hover {
   opacity: 0.8;
   text-decoration-thickness: 2px;
 }
 
+/* Verified Action Cards */
+.assistant-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 4px;
+}
+
+.assistant-action-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.2s, border-color 0.2s, transform 0.2s;
+}
+
+[data-theme="light"] .assistant-action-chip {
+  color: #3b5812;
+  border-color: #ccd4bf;
+}
+
+.assistant-action-chip:hover {
+  border-color: var(--accent);
+  background: var(--bg);
+  transform: translateY(-2px);
+}
+
+/* Dynamic follow-up suggestions */
+.assistant-suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--line);
+}
+
+.assistant-suggestions-label {
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.assistant-suggestion-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Typing / Loading state */
+.assistant-msg-typing {
+  align-self: flex-start;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 12px 16px;
+  border-radius: 16px 16px 16px 3px;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12.5px;
+}
+
+.typing-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.typing-dots span {
+  width: 6px;
+  height: 6px;
+  background: var(--accent);
+  border-radius: 50%;
+  animation: typingBounce 1.4s infinite ease-in-out both;
+}
+
+.typing-dots span:nth-child(1) {
+  animation-delay: -0.32s;
+}
+.typing-dots span:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes typingBounce {
+  0%, 80%, 100% {
+    transform: scale(0.6);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+}
+
+/* Error banner with retry */
+.assistant-msg-error {
+  border-color: rgba(220, 60, 60, 0.45);
+  background: rgba(220, 60, 60, 0.08);
+}
+
+.assistant-retry-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.assistant-retry-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border-radius: 16px;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.assistant-retry-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.assistant-retry-btn .icon {
+  width: 13px;
+  height: 13px;
+}
+
+/* Form input */
 .assistant-form {
   display: flex;
   gap: 8px;
@@ -471,75 +819,137 @@ dialog#assistant-dialog .dialog-close {
   padding-top: 12px;
   margin-top: auto;
   flex-shrink: 0;
+  align-items: center;
 }
-.assistant-form input {
+
+.assistant-input-wrap {
   flex: 1;
+  position: relative;
+}
+
+.assistant-form input {
+  width: 100%;
   border: 1px solid var(--line);
-  border-radius: 20px;
-  padding: 9px 14px;
+  border-radius: 24px;
+  padding: 10px 16px;
   background: var(--surface);
   color: var(--text);
-  font-size: 12px;
-  transition: border-color 0.2s;
+  font-size: 13px;
+  line-height: 1.4;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
+
 .assistant-form input:focus-visible {
   outline: 2px solid var(--purple);
   outline-offset: 1px;
+  border-color: var(--purple);
 }
-.assistant-form button {
-  width: 36px;
-  height: 36px;
+
+.assistant-send-btn {
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-ink);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+  cursor: pointer;
+  transition: transform 0.2s, background 0.2s, opacity 0.2s;
 }
-.assistant-form button[disabled] {
-  opacity: 0.5;
+
+.assistant-send-btn:hover:not(:disabled) {
+  transform: translateY(-2px) scale(1.04);
+}
+
+.assistant-send-btn .icon {
+  width: 17px;
+  height: 17px;
+}
+
+.assistant-send-btn[disabled] {
+  opacity: 0.45;
   cursor: not-allowed;
+  transform: none;
 }
 
 dialog#assistant-dialog .dialog-note {
-  font-size: 9px !important;
+  font-size: 9.5px !important;
   color: var(--muted) !important;
   text-align: center;
-  margin: 6px 0 0 0 !important;
+  margin: 7px 0 0 0 !important;
   border-top: 0 !important;
   padding-top: 0 !important;
   flex-shrink: 0;
 }
 
-@media (max-width: 620px) {
-  dialog#assistant-dialog {
-    width: calc(100vw - 24px);
-    height: 80vh;
-    max-height: 80vh;
-    border-radius: 18px;
+/* Mobile responsive sheet */
+@media (max-width: 640px) {
+  dialog#assistant-dialog.assistant-docked-panel {
+    inset: auto 0 0 0;
+    width: 100%;
+    height: 86vh;
+    max-height: 86vh;
+    border-radius: 22px 22px 0 0;
+    border-bottom: 0;
+    border-inline: 0;
   }
-  .assistant-fab {
+
+  dialog#assistant-dialog.assistant-docked-panel::backdrop {
+    display: block;
+    background: rgba(8, 12, 10, 0.65);
+    backdrop-filter: blur(5px);
+    pointer-events: auto;
+  }
+
+  .assistant-widget-container {
+    padding: 14px 16px max(14px, env(safe-area-inset-bottom));
+  }
+
+  .assistant-launcher-wrap {
     bottom: 20px;
     right: 20px;
-    width: 48px;
-    height: 48px;
   }
-  .assistant-fab .icon {
-    width: 20px;
-    height: 20px;
+
+  .assistant-fab {
+    padding: 5px 13px 5px 6px;
+    gap: 8px;
   }
-  .assistant-widget-container {
-    padding: 16px 16px 12px;
+
+  .assistant-fab-icon {
+    width: 34px;
+    height: 34px;
+  }
+
+  .assistant-fab-pill {
+    font-size: 12px;
+  }
+
+  .assistant-msg {
+    font-size: 13px;
   }
 }
 
 /* Motion system respect */
 .motion-paused .assistant-fab,
 .motion-paused .assistant-fab:hover,
-html.motion-paused .assistant-fab:hover {
+html.motion-paused .assistant-fab:hover,
+.motion-paused dialog#assistant-dialog.assistant-docked-panel[open] {
   transform: none !important;
+  animation: none !important;
 }
+
 @media (prefers-reduced-motion: reduce) {
   .assistant-fab,
-  .assistant-fab:hover {
+  .assistant-fab:hover,
+  dialog#assistant-dialog.assistant-docked-panel[open] {
     transform: none !important;
     transition: none !important;
+    animation: none !important;
+  }
+  .typing-dots span {
+    animation: none !important;
   }
 }
 
