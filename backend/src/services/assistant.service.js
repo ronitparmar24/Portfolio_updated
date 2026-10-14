@@ -6,18 +6,77 @@ import {
   ALLOWED_URL_SET
 } from './assistantKnowledge.js';
 
-const OVERALL_TIMEOUT_MS = 11000;
-const PRIMARY_MODEL_TIMEOUT_MS = 6500;
+export const OVERALL_TIMEOUT_MS = 11000;
+export const PRIMARY_MODEL_TIMEOUT_MS = 6500;
+
+export const CANDIDATE_MODELS = [
+  env.GROQ_MODEL,
+  env.GROQ_FALLBACK_MODEL,
+  'openai/gpt-oss-120b',
+  'openai/gpt-oss-20b',
+  'qwen/qwen3.8-27b',
+  'llama-3.3-70b-versatile',
+  'llama-3.1-8b-instant'
+].filter(Boolean);
 
 /**
- * Ask the portfolio assistant a question using Groq Cloud AI with multi-turn history,
- * grounded knowledge selection, strict response-time budgeting, and model fallback.
+ * Sanitize and bound history (last 6 turns = 3 user/assistant pairs)
+ */
+export function sanitizeHistory(history = []) {
+  if (!Array.isArray(history)) return [];
+  return history
+    .slice(-6)
+    .filter(
+      (turn) =>
+        turn &&
+        (turn.role === 'user' || turn.role === 'assistant') &&
+        typeof turn.content === 'string' &&
+        turn.content.trim().length > 0
+    )
+    .map((turn) => ({
+      role: turn.role,
+      content: turn.content.trim().slice(0, 600)
+    }));
+}
+
+/**
+ * Assemble messages array with system prompt and history.
+ */
+export async function assembleMessages(question, safeHistory, options = {}) {
+  const knowledgeContext = typeof buildRelevantKnowledge === 'function'
+    ? await Promise.resolve(buildRelevantKnowledge(question, safeHistory, options))
+    : '';
+
+  const systemPrompt = `You are the portfolio assistant and guide for Ronit Parmar, embedded directly on his personal developer portfolio website.
+
+${knowledgeContext}`.trim();
+
+  return [
+    { role: 'system', content: systemPrompt },
+    ...safeHistory,
+    { role: 'user', content: question.trim() }
+  ];
+}
+
+/**
+ * Ask the portfolio assistant a question using Groq Cloud AI with streaming SSE support,
+ * resilient model fallback, and an 11s response budget.
  *
- * @param {string} question - The visitor's question
- * @param {Array<{role: string, content: string}>} [history=[]] - Validated previous messages
+ * @param {object} params
+ * @param {string} params.question - Visitor's query
+ * @param {Array} [params.history=[]] - Validated previous turns
+ * @param {string} [params.mode='recruiter'] - Interaction mode
+ * @param {AbortSignal} [params.clientSignal] - AbortSignal from client disconnect
+ * @param {Function} params.onToken - Callback invoked for each streamed token (string)
  * @returns {Promise<{answer: string, actions: Array<object>, suggestions: Array<string>}>}
  */
-export async function askAssistant(question, history = []) {
+export async function askAssistantStream({
+  question,
+  history = [],
+  mode = 'recruiter',
+  clientSignal = null,
+  onToken = () => {}
+}) {
   if (!env.GROQ_API_KEY) {
     const error = new Error('GROQ_API_KEY is not configured');
     error.status = 503;
@@ -25,65 +84,35 @@ export async function askAssistant(question, history = []) {
     throw error;
   }
 
-  // 1. Sanitize and bound history (last 6 turns = 3 user/assistant pairs)
-  const safeHistory = Array.isArray(history)
-    ? history
-        .slice(-6)
-        .filter(
-          (turn) =>
-            turn &&
-            (turn.role === 'user' || turn.role === 'assistant') &&
-            typeof turn.content === 'string' &&
-            turn.content.trim().length > 0
-        )
-        .map((turn) => ({
-          role: turn.role,
-          content: turn.content.trim().slice(0, 600)
-        }))
-    : [];
+  const safeHistory = sanitizeHistory(history);
+  const messages = await assembleMessages(question, safeHistory, { mode });
 
-  // 2. Select dynamic, grounded knowledge context
-  const systemPrompt = `You are the portfolio assistant and guide for Ronit Parmar, embedded directly on his personal developer portfolio website.
-
-${buildRelevantKnowledge(question, safeHistory)}
-`.trim();
-
-  // 3. Assemble chat completion messages (system prompt is strictly server-controlled)
-  const messages = [
-    { role: 'system', content: systemPrompt },
-    ...safeHistory,
-    { role: 'user', content: question.trim() }
-  ];
-
-  // 4. Candidate models from environment configuration with resilient fallbacks
-  const candidateModels = Array.from(
-    new Set(
-      [
-        env.GROQ_MODEL,
-        env.GROQ_FALLBACK_MODEL,
-        'openai/gpt-oss-120b',
-        'openai/gpt-oss-20b',
-        'qwen/qwen3.8-27b',
-        'llama-3.3-70b-versatile',
-        'llama-3.1-8b-instant'
-      ].filter(Boolean)
-    )
-  );
-
+  const candidateModels = Array.from(new Set(CANDIDATE_MODELS));
   const overallController = new AbortController();
   const overallTimeoutId = setTimeout(() => overallController.abort(), OVERALL_TIMEOUT_MS);
 
+  if (clientSignal) {
+    if (clientSignal.aborted) {
+      clearTimeout(overallTimeoutId);
+      throw new Error('Client aborted');
+    }
+    clientSignal.addEventListener('abort', () => overallController.abort(), { once: true });
+  }
+
   let lastError = null;
+  let accumulatedAnswer = '';
 
   try {
     for (let i = 0; i < candidateModels.length; i++) {
+      if (overallController.signal.aborted) break;
+
       const model = candidateModels[i];
       const isLastModel = i === candidateModels.length - 1;
       const modelTimeoutMs = isLastModel ? OVERALL_TIMEOUT_MS : PRIMARY_MODEL_TIMEOUT_MS;
 
       const modelController = new AbortController();
       const onOverallAbort = () => modelController.abort();
-      overallController.signal.addEventListener('abort', onOverallAbort);
+      overallController.signal.addEventListener('abort', onOverallAbort, { once: true });
 
       const modelTimerId = setTimeout(() => modelController.abort(), modelTimeoutMs);
 
@@ -97,7 +126,8 @@ ${buildRelevantKnowledge(question, safeHistory)}
           body: JSON.stringify({
             model,
             temperature: 0.35,
-            max_tokens: 300,
+            max_tokens: 400,
+            stream: true,
             messages
           }),
           signal: modelController.signal
@@ -120,23 +150,70 @@ ${buildRelevantKnowledge(question, safeHistory)}
           const err = new Error(`Groq responded with ${response.status}`);
           err.status = response.status;
           lastError = err;
-          continue; // Attempt fallback candidate
+          continue; // Attempt fallback model
         }
 
-        const data = await response.json();
-        const rawAnswer = data.choices?.[0]?.message?.content?.trim();
+        if (!response.body) {
+          throw new Error('Groq response body is empty');
+        }
 
-        if (rawAnswer) {
+        // Stream and parse SSE chunks from Groq
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let buffer = '';
+        let modelProducedTokens = false;
+
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || '';
+
+            for (const line of lines) {
+              const trimmed = line.trim();
+              if (!trimmed || trimmed.startsWith(':')) continue;
+              if (trimmed === 'data: [DONE]') continue;
+
+              if (trimmed.startsWith('data: ')) {
+                const jsonStr = trimmed.slice(6);
+                try {
+                  const data = JSON.parse(jsonStr);
+                  const token = data.choices?.[0]?.delta?.content;
+                  if (token) {
+                    modelProducedTokens = true;
+                    accumulatedAnswer += token;
+                    onToken(token);
+                  }
+                } catch (_) {
+                  // Ignore JSON parse errors on partial chunks
+                }
+              }
+            }
+          }
+        } catch (streamErr) {
+          // If the model threw an error mid-stream after emitting tokens, we cannot cleanly restart
+          if (modelProducedTokens) {
+            throw streamErr;
+          }
+          // If it failed before any tokens, fall back to next model
+          console.warn(`[assistant] stream error on ${model} before tokens:`, streamErr.message);
+          lastError = streamErr;
+          continue;
+        }
+
+        const finalAnswer = accumulatedAnswer.trim();
+        if (finalAnswer) {
           clearTimeout(overallTimeoutId);
 
-          // 5. Build verified actions and follow-up suggestions
-          const rawActions = determineActions(question, rawAnswer, safeHistory);
-          // Strictly validate that each action URL is in the server allowlist
+          const rawActions = determineActions(question, finalAnswer, safeHistory);
           const verifiedActions = rawActions.filter((act) => act && ALLOWED_URL_SET.has(act.url));
-          const suggestions = determineSuggestions(question, rawAnswer, safeHistory);
+          const suggestions = determineSuggestions(question, finalAnswer, safeHistory);
 
           return {
-            answer: rawAnswer,
+            answer: finalAnswer,
             actions: verifiedActions,
             suggestions
           };
@@ -152,7 +229,6 @@ ${buildRelevantKnowledge(question, safeHistory)}
         console.warn(`[assistant] model ${model} error:`, err.message);
         lastError = err;
 
-        // If overall budget timed out, don't attempt more models
         if (overallController.signal.aborted) {
           break;
         }
@@ -162,7 +238,6 @@ ${buildRelevantKnowledge(question, safeHistory)}
     clearTimeout(overallTimeoutId);
   }
 
-  // Handle failure cleanly
   if (overallController.signal.aborted) {
     const timeoutErr = new Error('Assistant query timed out before completing');
     timeoutErr.status = 504;
@@ -175,3 +250,19 @@ ${buildRelevantKnowledge(question, safeHistory)}
     new Error('Assistant was unable to generate an answer at this time.')
   );
 }
+
+/**
+ * Backward-compatible non-streaming function used by existing test suite.
+ */
+export async function askAssistant(question, history = [], options = {}) {
+  let completeAnswer = '';
+  return await askAssistantStream({
+    question,
+    history,
+    mode: options.mode || 'recruiter',
+    onToken: (token) => {
+      completeAnswer += token;
+    }
+  });
+}
+
