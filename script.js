@@ -440,169 +440,519 @@ loadGithubRepositories();
   });
 })();
 
-/* ── "Ask about Ronit" AI Assistant ─────────────────────────────── */
+/* ── "Ask about Ronit" Portfolio Guide Assistant ─────────────────────────────── */
 (function initAssistant() {
   const ASSISTANT_API =
     typeof API_BASE_URL !== 'undefined'
       ? API_BASE_URL
       : (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:'
         ? 'http://localhost:5000/api'
-        : 'https://YOUR-SERVICE.onrender.com/api');
+        : '/api');
 
   const assistantDialog = document.querySelector('#assistant-dialog');
   const assistantTrigger = document.querySelector('#assistant-trigger');
   const assistantForm = document.querySelector('#assistant-form');
   const assistantInput = document.querySelector('#assistant-input');
   const assistantLog = document.querySelector('#assistant-log');
+  const clearBtn = document.querySelector('#assistant-clear-btn');
+  const closeBtn = assistantDialog?.querySelector('.dialog-close');
+  const submitBtn = assistantForm?.querySelector('button[type="submit"]');
 
   if (!assistantDialog || !assistantTrigger || !assistantForm || !assistantInput || !assistantLog) {
     return;
   }
 
-  const closeButton = assistantDialog.querySelector('.dialog-close');
-  const submitButton = assistantForm.querySelector('button[type="submit"]');
+  const STORAGE_KEY = 'ronit_portfolio_chat_v2';
+  const MAX_HISTORY_TURNS = 8;
+  const CLIENT_TIMEOUT_MS = 15000;
+
+  // Strict allowlist for frontend clickable actions
+  const ALLOWED_URLS = new Set([
+    'https://metro-mind-lemon.vercel.app/',
+    'https://github.com/ronitparmar24/MetroMind',
+    'https://cinepulse-kohl.vercel.app/',
+    'https://github.com/ronitparmar24/Cinepulse',
+    'https://github.com/ronitparmar24/cinepulse',
+    'https://github.com/ronitparmar24/digiKhata',
+    'https://github.com/ronitparmar24/metroflow',
+    'https://github.com/ronitparmar24/BRTS-Management',
+    'https://github.com/ronitparmar24/FlappyBirdV1',
+    'https://github.com/ronitparmar24?tab=repositories',
+    'https://github.com/ronitparmar24',
+    'https://linkedin.com/in/ronit-parmar',
+    './assets/Ronit_Parmar_Resume.pdf',
+    'mailto:ronitparmar.work@gmail.com',
+    '#contact',
+    '#work',
+    '#about',
+    '#toolkit',
+    '#journey'
+  ]);
+
+  const STARTER_ACTIONS = [
+    { label: 'Explore his projects', question: 'What projects has Ronit built and what did he build in them?' },
+    { label: 'Compare MetroMind & CinePulse', question: 'Compare MetroMind and CinePulse' },
+    { label: 'Technical strengths', question: 'What are Ronit’s core technical strengths and stack?' },
+    { label: 'Internship availability', question: 'What internships is Ronit looking for and when is he available?' },
+    { label: 'How to contact Ronit', question: 'How can I contact Ronit directly?' }
+  ];
+
+  // In-memory conversation state for this page session
+  let conversation = [];
+  let lastFailedQuestion = null;
+
+  // Restore session from tab-scoped sessionStorage if present
+  function loadSession() {
+    try {
+      const saved = sessionStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          conversation = parsed;
+          renderConversation();
+          return;
+        }
+      }
+    } catch (_) {}
+    renderWelcomeState();
+  }
+
+  function saveSession() {
+    try {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(conversation.slice(-12)));
+    } catch (_) {}
+  }
+
+  function clearSession() {
+    try {
+      sessionStorage.removeItem(STORAGE_KEY);
+    } catch (_) {}
+    conversation = [];
+    lastFailedQuestion = null;
+    renderWelcomeState();
+    toast('Conversation cleared.');
+    assistantInput.focus({ preventScroll: true });
+  }
+
+  clearBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    clearSession();
+  });
+
+  // Open & Close docked panel
+  function openAssistant() {
+    if (assistantDialog.open) return;
+
+    const isMobile = window.innerWidth <= 640;
+    if (isMobile) {
+      assistantDialog.showModal();
+    } else {
+      assistantDialog.show();
+    }
+
+    assistantTrigger.setAttribute('aria-expanded', 'true');
+    assistantDialog.scrollTop = 0;
+    assistantLog.scrollTop = assistantLog.scrollHeight;
+
+    setTimeout(() => {
+      assistantInput?.focus({ preventScroll: true });
+    }, 60);
+  }
+
+  function closeAssistant() {
+    if (!assistantDialog.open) return;
+    assistantDialog.close();
+    assistantTrigger.setAttribute('aria-expanded', 'false');
+    assistantTrigger.focus({ preventScroll: true });
+  }
 
   assistantTrigger.addEventListener('click', (e) => {
     e.stopPropagation();
     if (assistantDialog.open) {
-      assistantDialog.close();
-      return;
+      closeAssistant();
+    } else {
+      openAssistant();
     }
-    assistantDialog.showModal();
-    assistantDialog.scrollTop = 0;
-    document.body.style.overflow = 'hidden';
-    setTimeout(() => {
-      assistantInput?.focus({ preventScroll: true });
-    }, 50);
   });
 
-  closeButton?.addEventListener('click', (e) => {
+  closeBtn?.addEventListener('click', (e) => {
     e.stopPropagation();
-    assistantDialog.close();
+    closeAssistant();
   });
 
-  assistantDialog.addEventListener('click', (e) => {
-    if (e.target === assistantDialog) {
-      assistantDialog.close();
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && assistantDialog.open) {
+      closeAssistant();
     }
   });
 
-  assistantDialog.addEventListener('close', () => {
-    document.body.style.overflow = '';
-    assistantTrigger?.focus({ preventScroll: true });
-  });
+  // Render initial welcome state
+  function renderWelcomeState() {
+    assistantLog.replaceChildren();
 
-  assistantDialog.querySelectorAll('.assistant-chip').forEach((chip) => {
-    chip.addEventListener('click', () => {
-      const q = chip.dataset.question;
-      if (q && !assistantInput.disabled) {
-        assistantInput.value = q;
-        if (typeof assistantForm.requestSubmit === 'function') {
-          assistantForm.requestSubmit();
-        } else {
-          assistantForm.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
-        }
-      }
-    });
-  });
+    const welcomeWrap = document.createElement('div');
+    welcomeWrap.className = 'assistant-welcome';
 
-  function formatAssistantMessage(text) {
-    if (!text) return '';
-    const links = [];
-    const addLink = (href, label) => {
-      const idx = links.length;
-      links.push(`<a href="${href}" target="_blank" rel="noopener noreferrer" class="assistant-link">${label} ↗</a>`);
-      return `___LINK_${idx}___`;
-    };
-    const addEmail = (email) => {
-      const idx = links.length;
-      links.push(`<a href="mailto:${email}" class="assistant-link">${email}</a>`);
-      return `___LINK_${idx}___`;
-    };
+    const card = document.createElement('div');
+    card.className = 'assistant-welcome-card';
 
-    let safe = text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
+    const greeting = document.createElement('p');
+    greeting.textContent =
+      'Hi! I’m Ronit’s portfolio guide. Ask me about his full-stack work, project architecture, or internship availability.';
+    card.append(greeting);
 
-    safe = safe.replace(/\[([^\]]+)\]\(((?:https?:\/\/)[^\s)]+)\)/g, (_, label, url) => addLink(url, label));
+    const sub = document.createElement('small');
+    sub.textContent = 'Grounded strictly in verified portfolio code, projects, and résumé.';
+    card.append(sub);
 
-    safe = safe.replace(/(https?:\/\/[^\s<)]+)/g, (url) => {
-      const cleanUrl = url.replace(/[.,;!?)]+$/, '');
-      const trailing = url.slice(cleanUrl.length);
-      return addLink(cleanUrl, cleanUrl) + trailing;
-    });
+    welcomeWrap.append(card);
 
-    safe = safe.replace(/(?:^|[\s(])((?:github\.com|[\w-]+\.vercel\.app)[^\s<)]*)/g, (match, url) => {
-      const prefix = match.slice(0, match.indexOf(url));
-      const cleanUrl = url.replace(/[.,;!?)]+$/, '');
-      const trailing = url.slice(cleanUrl.length);
-      return prefix + addLink(`https://${cleanUrl}`, cleanUrl) + trailing;
+    const startersWrap = document.createElement('div');
+    startersWrap.className = 'assistant-starters';
+
+    const label = document.createElement('span');
+    label.className = 'assistant-starters-label';
+    label.textContent = 'Explore Ronit’s work:';
+    startersWrap.append(label);
+
+    const list = document.createElement('div');
+    list.className = 'assistant-starters-list';
+    list.setAttribute('role', 'group');
+    list.setAttribute('aria-label', 'Starter questions');
+
+    STARTER_ACTIONS.forEach(({ label: chipLabel, question }) => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'assistant-chip';
+      chip.textContent = chipLabel;
+      chip.setAttribute('data-question', question);
+      chip.addEventListener('click', () => {
+        submitQuestion(question);
+      });
+      list.append(chip);
     });
 
-    safe = safe.replace(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g, (email) => {
-      const cleanEmail = email.replace(/[.,;!?]+$/, '');
-      const trailing = email.slice(cleanEmail.length);
-      return addEmail(cleanEmail) + trailing;
-    });
-
-    return safe.replace(/___LINK_(\d+)___/g, (_, idx) => links[Number(idx)] || '');
+    startersWrap.append(list);
+    welcomeWrap.append(startersWrap);
+    assistantLog.append(welcomeWrap);
+    assistantLog.scrollTop = assistantLog.scrollHeight;
   }
 
-  assistantForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const question = assistantInput.value.trim();
-    if (!question) return;
+  // Safe DOM-based text formatter (Never uses innerHTML with unescaped AI content)
+  function buildSafeMessageBody(text) {
+    const container = document.createElement('div');
+    container.className = 'assistant-msg-body';
 
-    // 1. Append user message bubble (escaped via textContent)
-    const userBubble = document.createElement('div');
-    userBubble.className = 'assistant-msg assistant-msg-user';
-    userBubble.textContent = question;
-    assistantLog.append(userBubble);
+    if (!text) return container;
 
-    // 2. Disable input and submit button
+    // Split text into lines/paragraphs safely
+    const lines = text.split('\n');
+    lines.forEach((line, lineIdx) => {
+      if (lineIdx > 0) {
+        container.append(document.createElement('br'));
+      }
+      if (!line.trim()) return;
+
+      // Tokenize for bold (**text**), code (`text`), and verified URLs/emails
+      const parts = line.split(/(\*\*[^*]+\*\*|`[^`]+`|https?:\/\/[^\s)]+|mailto:[^\s)]+|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g);
+
+      parts.forEach((part) => {
+        if (!part) return;
+
+        // Bold
+        if (part.startsWith('**') && part.endsWith('**')) {
+          const strong = document.createElement('strong');
+          strong.textContent = part.slice(2, -2);
+          container.append(strong);
+          return;
+        }
+
+        // Inline code
+        if (part.startsWith('`') && part.endsWith('`')) {
+          const code = document.createElement('code');
+          code.textContent = part.slice(1, -1);
+          container.append(code);
+          return;
+        }
+
+        // Email address
+        if (part.includes('@') && !part.startsWith('http')) {
+          const cleanEmail = part.replace(/[.,;!?)]+$/, '');
+          const trailing = part.slice(cleanEmail.length);
+          const mailto = `mailto:${cleanEmail}`;
+          if (ALLOWED_URLS.has(mailto)) {
+            const a = document.createElement('a');
+            a.href = mailto;
+            a.className = 'assistant-link';
+            a.textContent = cleanEmail;
+            container.append(a);
+            if (trailing) container.append(document.createTextNode(trailing));
+            return;
+          }
+        }
+
+        // URL check against allowlist
+        if (part.startsWith('http')) {
+          const cleanUrl = part.replace(/[.,;!?)]+$/, '');
+          const trailing = part.slice(cleanUrl.length);
+
+          if (ALLOWED_URLS.has(cleanUrl)) {
+            const a = document.createElement('a');
+            a.href = cleanUrl;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            a.className = 'assistant-link';
+            a.textContent = `${cleanUrl} ↗`;
+            container.append(a);
+            if (trailing) container.append(document.createTextNode(trailing));
+            return;
+          }
+        }
+
+        // Regular text node (safe by construction)
+        container.append(document.createTextNode(part));
+      });
+    });
+
+    return container;
+  }
+
+  // Render full conversation
+  function renderConversation() {
+    assistantLog.replaceChildren();
+
+    if (conversation.length === 0) {
+      renderWelcomeState();
+      return;
+    }
+
+    conversation.forEach((turn, idx) => {
+      if (turn.role === 'user') {
+        const bubble = document.createElement('div');
+        bubble.className = 'assistant-msg assistant-msg-user';
+        bubble.textContent = turn.content;
+        assistantLog.append(bubble);
+      } else if (turn.role === 'assistant') {
+        const bubble = document.createElement('div');
+        bubble.className = 'assistant-msg assistant-msg-bot';
+
+        // Header with timestamp and copy button
+        const header = document.createElement('div');
+        header.className = 'assistant-bot-header';
+
+        const titleSpan = document.createElement('span');
+        titleSpan.textContent = 'PORTFOLIO GUIDE';
+        header.append(titleSpan);
+
+        const copyBtn = document.createElement('button');
+        copyBtn.type = 'button';
+        copyBtn.className = 'assistant-copy-btn';
+        copyBtn.setAttribute('aria-label', 'Copy answer to clipboard');
+        copyBtn.innerHTML = '<svg class="icon"><use href="#copy"/></svg> <span>Copy</span>';
+
+        copyBtn.addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(turn.content);
+            copyBtn.classList.add('copied');
+            copyBtn.querySelector('span').textContent = 'Copied!';
+            setTimeout(() => {
+              copyBtn.classList.remove('copied');
+              copyBtn.querySelector('span').textContent = 'Copy';
+            }, 2000);
+          } catch (_) {
+            toast('Failed to copy.');
+          }
+        });
+        header.append(copyBtn);
+        bubble.append(header);
+
+        // Body content
+        bubble.append(buildSafeMessageBody(turn.content));
+
+        // Verified action chips
+        if (Array.isArray(turn.actions) && turn.actions.length > 0) {
+          const actionsWrap = document.createElement('div');
+          actionsWrap.className = 'assistant-actions';
+          actionsWrap.setAttribute('role', 'group');
+          actionsWrap.setAttribute('aria-label', 'Verified resources');
+
+          turn.actions.forEach((act) => {
+            if (act && act.url && ALLOWED_URLS.has(act.url)) {
+              const chip = document.createElement('a');
+              chip.className = 'assistant-action-chip';
+              chip.href = act.url;
+              chip.textContent = act.label || 'View resource ↗';
+
+              if (act.type === 'download' || act.url.endsWith('.pdf')) {
+                chip.setAttribute('download', '');
+              } else if (!act.url.startsWith('#') && !act.url.startsWith('mailto:')) {
+                chip.target = '_blank';
+                chip.rel = 'noopener noreferrer';
+              }
+
+              actionsWrap.append(chip);
+            }
+          });
+
+          if (actionsWrap.children.length > 0) {
+            bubble.append(actionsWrap);
+          }
+        }
+
+        // Suggestions on the last bot response
+        if (idx === conversation.length - 1 && Array.isArray(turn.suggestions) && turn.suggestions.length > 0) {
+          const sugWrap = document.createElement('div');
+          sugWrap.className = 'assistant-suggestions';
+
+          const sugLabel = document.createElement('span');
+          sugLabel.className = 'assistant-suggestions-label';
+          sugLabel.textContent = 'Suggested follow-ups:';
+          sugWrap.append(sugLabel);
+
+          const sugList = document.createElement('div');
+          sugList.className = 'assistant-suggestion-chips';
+
+          turn.suggestions.forEach((sugText) => {
+            const chip = document.createElement('button');
+            chip.type = 'button';
+            chip.className = 'assistant-chip';
+            chip.textContent = sugText;
+            chip.addEventListener('click', () => {
+              submitQuestion(sugText);
+            });
+            sugList.append(chip);
+          });
+
+          sugWrap.append(sugList);
+          bubble.append(sugWrap);
+        }
+
+        assistantLog.append(bubble);
+      }
+    });
+
+    assistantLog.scrollTop = assistantLog.scrollHeight;
+  }
+
+  // Submit question flow
+  async function submitQuestion(questionText) {
+    const question = (questionText || assistantInput.value).trim();
+    if (!question || assistantInput.disabled) return;
+
+    lastFailedQuestion = null;
+
+    // Append user message to conversation
+    conversation.push({ role: 'user', content: question });
+    renderConversation();
+
+    // Disable input
+    assistantInput.value = '';
     assistantInput.disabled = true;
-    if (submitButton) submitButton.disabled = true;
+    if (submitBtn) submitBtn.disabled = true;
 
-    // 3. Append three-dot "typing" bubble
-    const botBubble = document.createElement('div');
-    botBubble.className = 'assistant-msg assistant-msg-bot assistant-msg-typing';
-    botBubble.textContent = 'Thinking…';
-    assistantLog.append(botBubble);
+    // Append loading typing bubble
+    const typingBubble = document.createElement('div');
+    typingBubble.className = 'assistant-msg-typing';
+    typingBubble.innerHTML = '<span class="typing-dots"><span></span><span></span><span></span></span> <span>Thinking…</span>';
+    assistantLog.append(typingBubble);
     assistantLog.scrollTop = assistantLog.scrollHeight;
 
-    const fallbackMessage = "That's taking too long — try again in a moment, or email ronitparmar.work@gmail.com directly.";
+    // Prepare bounded history payload (exclude current question)
+    const historyPayload = conversation
+      .slice(0, -1)
+      .slice(-MAX_HISTORY_TURNS)
+      .map((t) => ({ role: t.role, content: t.content }));
 
     try {
       const response = await fetch(`${ASSISTANT_API}/assistant`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question }),
-        signal: AbortSignal.timeout(20000)
+        body: JSON.stringify({
+          question,
+          history: historyPayload
+        }),
+        signal: AbortSignal.timeout(CLIENT_TIMEOUT_MS)
       });
 
-      botBubble.classList.remove('assistant-msg-typing');
+      typingBubble.remove();
 
-      if (!response.ok) {
-        botBubble.innerHTML = formatAssistantMessage(fallbackMessage);
-      } else {
-        const result = await response.json();
-        if (result.success && result.answer) {
-          botBubble.innerHTML = formatAssistantMessage(result.answer);
-        } else {
-          botBubble.innerHTML = formatAssistantMessage(fallbackMessage);
-        }
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok || !data || !data.success) {
+        handleQueryError(data?.message || 'That is taking longer than expected to answer.', question);
+        return;
       }
-    } catch (_) {
-      botBubble.classList.remove('assistant-msg-typing');
-      botBubble.innerHTML = formatAssistantMessage(fallbackMessage);
+
+      // Successful answer received
+      conversation.push({
+        role: 'assistant',
+        content: data.answer,
+        actions: Array.isArray(data.actions) ? data.actions : [],
+        suggestions: Array.isArray(data.suggestions) ? data.suggestions : []
+      });
+
+      saveSession();
+      renderConversation();
+    } catch (err) {
+      typingBubble.remove();
+      const isTimeout = err.name === 'TimeoutError' || err.name === 'AbortError';
+      const msg = isTimeout
+        ? 'That question took too long to answer. Try retrying or emailing Ronit directly.'
+        : 'The assistant could not connect right now. Please try again in a moment.';
+      handleQueryError(msg, question);
     } finally {
       assistantInput.disabled = false;
-      if (submitButton) submitButton.disabled = false;
-      assistantInput.value = '';
+      if (submitBtn) submitBtn.disabled = false;
       assistantLog.scrollTop = assistantLog.scrollHeight;
       assistantInput.focus({ preventScroll: true });
     }
+  }
+
+  // Handle failure cleanly with retry button and direct contact option
+  function handleQueryError(message, failedQuestion) {
+    lastFailedQuestion = failedQuestion;
+
+    const errorBubble = document.createElement('div');
+    errorBubble.className = 'assistant-msg assistant-msg-bot assistant-msg-error';
+
+    const textEl = document.createElement('div');
+    textEl.className = 'assistant-msg-body';
+    textEl.textContent = message;
+    errorBubble.append(textEl);
+
+    const retryRow = document.createElement('div');
+    retryRow.className = 'assistant-retry-row';
+
+    const retryBtn = document.createElement('button');
+    retryBtn.type = 'button';
+    retryBtn.className = 'assistant-retry-btn';
+    retryBtn.innerHTML = '<svg class="icon"><use href="#rotate-ccw"/></svg> <span>Retry question</span>';
+    retryBtn.addEventListener('click', () => {
+      errorBubble.remove();
+      if (lastFailedQuestion) {
+        submitQuestion(lastFailedQuestion);
+      }
+    });
+    retryRow.append(retryBtn);
+
+    const emailLink = document.createElement('a');
+    emailLink.href = 'mailto:ronitparmar.work@gmail.com';
+    emailLink.className = 'text-link';
+    emailLink.textContent = 'Email Ronit directly ↗';
+    retryRow.append(emailLink);
+
+    errorBubble.append(retryRow);
+    assistantLog.append(errorBubble);
+    assistantLog.scrollTop = assistantLog.scrollHeight;
+  }
+
+  assistantForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    submitQuestion();
   });
+
+  // Initialize session on page load
+  loadSession();
 })();
+
 
