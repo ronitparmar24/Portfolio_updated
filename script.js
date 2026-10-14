@@ -455,16 +455,22 @@ loadGithubRepositories();
   const assistantInput = document.querySelector('#assistant-input');
   const assistantLog = document.querySelector('#assistant-log');
   const clearBtn = document.querySelector('#assistant-clear-btn');
-  const closeBtn = assistantDialog?.querySelector('.dialog-close');
-  const submitBtn = assistantForm?.querySelector('button[type="submit"]');
+  const closeBtn = document.querySelector('#assistant-close-btn') || assistantDialog?.querySelector('.dialog-close');
+  const sendBtn = document.querySelector('#assistant-send-btn') || assistantForm?.querySelector('button[type="submit"]');
+  const stopBtn = document.querySelector('#assistant-stop-btn');
+  const charCounter = document.querySelector('#assistant-char-count');
+  const jumpBtn = document.querySelector('#assistant-jump-btn');
+  const modePills = document.querySelectorAll('.assistant-mode-pill');
 
   if (!assistantDialog || !assistantTrigger || !assistantForm || !assistantInput || !assistantLog) {
     return;
   }
 
-  const STORAGE_KEY = 'ronit_portfolio_chat_v2';
+  const STORAGE_KEY = 'ronit_portfolio_chat_v3';
+  const MODE_STORAGE_KEY = 'ronit_assistant_mode_v3';
+  const SESSION_ID_KEY = 'ronit_assistant_session_v3';
   const MAX_HISTORY_TURNS = 8;
-  const CLIENT_TIMEOUT_MS = 15000;
+  const CLIENT_TIMEOUT_MS = 16000;
 
   // Strict allowlist for frontend clickable actions
   const ALLOWED_URLS = new Set([
@@ -490,18 +496,99 @@ loadGithubRepositories();
   ]);
 
   const STARTER_ACTIONS = [
-    { label: 'Explore his projects', question: 'What projects has Ronit built and what did he build in them?' },
-    { label: 'Compare MetroMind & CinePulse', question: 'Compare MetroMind and CinePulse' },
-    { label: 'Technical strengths', question: 'What are Ronit’s core technical strengths and stack?' },
-    { label: 'Internship availability', question: 'What internships is Ronit looking for and when is he available?' },
-    { label: 'How to contact Ronit', question: 'How can I contact Ronit directly?' }
+    { label: 'Summarize Ronit in 30 seconds', question: 'Summarize Ronit in 30 seconds' },
+    { label: 'Best project to look at first', question: 'What is the best project to look at first and why?' },
+    { label: 'Is he a fit for a full-stack internship?', question: 'Is Ronit a fit for a full-stack developer internship?' },
+    { label: 'Tech stack overview', question: 'What is Ronit’s core technical stack and skills?' }
   ];
 
-  // In-memory conversation state for this page session
+  // Initialize session ID
+  let sessionId = '';
+  try {
+    sessionId = sessionStorage.getItem(SESSION_ID_KEY) || '';
+    if (!sessionId) {
+      sessionId = 'sess_' + Math.random().toString(36).slice(2, 10) + '_' + Date.now().toString(36);
+      sessionStorage.setItem(SESSION_ID_KEY, sessionId);
+    }
+  } catch (_) {
+    sessionId = 'sess_' + Date.now();
+  }
+
+  // Initialize mode
+  let currentMode = 'recruiter';
+  try {
+    const savedMode = sessionStorage.getItem(MODE_STORAGE_KEY);
+    if (savedMode && ['recruiter', 'technical', 'casual'].includes(savedMode)) {
+      currentMode = savedMode;
+    }
+  } catch (_) {}
+
+  // Sync mode pill UI
+  function updateModeUI() {
+    modePills.forEach((pill) => {
+      const isActive = pill.dataset.mode === currentMode;
+      pill.classList.toggle('active', isActive);
+      pill.setAttribute('aria-selected', String(isActive));
+    });
+  }
+  updateModeUI();
+
+  modePills.forEach((pill) => {
+    pill.addEventListener('click', () => {
+      const newMode = pill.dataset.mode;
+      if (newMode && newMode !== currentMode) {
+        currentMode = newMode;
+        try { sessionStorage.setItem(MODE_STORAGE_KEY, currentMode); } catch (_) {}
+        updateModeUI();
+        toast(`Mode switched to ${pill.textContent.trim()}`);
+      }
+    });
+  });
+
+  // Conversation state
   let conversation = [];
   let lastFailedQuestion = null;
+  let currentAbortController = null;
+  let userHasScrolledUp = false;
 
-  // Restore session from tab-scoped sessionStorage if present
+  // Character counter listener
+  assistantInput.addEventListener('input', () => {
+    const len = assistantInput.value.length;
+    if (charCounter) {
+      charCounter.textContent = `${len}/350`;
+      charCounter.style.color = len > 320 ? '#ff6b6b' : 'var(--muted)';
+    }
+    // Auto-adjust height for textarea (max 70px)
+    assistantInput.style.height = 'auto';
+    assistantInput.style.height = `${Math.min(assistantInput.scrollHeight, 70)}px`;
+  });
+
+  // Track user scroll position in log
+  assistantLog.addEventListener('scroll', () => {
+    const scrollBottom = assistantLog.scrollHeight - assistantLog.scrollTop - assistantLog.clientHeight;
+    userHasScrolledUp = scrollBottom > 60;
+    if (jumpBtn) {
+      jumpBtn.hidden = !userHasScrolledUp;
+    }
+  });
+
+  jumpBtn?.addEventListener('click', () => {
+    assistantLog.scrollTo({ top: assistantLog.scrollHeight, behavior: 'smooth' });
+    userHasScrolledUp = false;
+    jumpBtn.hidden = true;
+  });
+
+  function scrollToBottomIfAllowed(smooth = true) {
+    if (!userHasScrolledUp) {
+      if (smooth) {
+        assistantLog.scrollTo({ top: assistantLog.scrollHeight, behavior: 'smooth' });
+      } else {
+        assistantLog.scrollTop = assistantLog.scrollHeight;
+      }
+    }
+  }
+
+  // Restore session from tab-scoped sessionStorage
   function loadSession() {
     try {
       const saved = sessionStorage.getItem(STORAGE_KEY);
@@ -519,14 +606,16 @@ loadGithubRepositories();
 
   function saveSession() {
     try {
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(conversation.slice(-12)));
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(conversation.slice(-14)));
     } catch (_) {}
   }
 
   function clearSession() {
-    try {
-      sessionStorage.removeItem(STORAGE_KEY);
-    } catch (_) {}
+    if (currentAbortController) {
+      currentAbortController.abort();
+      currentAbortController = null;
+    }
+    try { sessionStorage.removeItem(STORAGE_KEY); } catch (_) {}
     conversation = [];
     lastFailedQuestion = null;
     renderWelcomeState();
@@ -586,6 +675,14 @@ loadGithubRepositories();
     }
   });
 
+  // Keyboard shortcut: Enter sends, Shift+Enter new line
+  assistantInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      assistantForm.requestSubmit();
+    }
+  });
+
   // Render initial welcome state
   function renderWelcomeState() {
     assistantLog.replaceChildren();
@@ -635,86 +732,263 @@ loadGithubRepositories();
     startersWrap.append(list);
     welcomeWrap.append(startersWrap);
     assistantLog.append(welcomeWrap);
-    assistantLog.scrollTop = assistantLog.scrollHeight;
+    scrollToBottomIfAllowed(false);
   }
 
-  // Safe DOM-based text formatter (Never uses innerHTML with unescaped AI content)
-  function buildSafeMessageBody(text) {
-    const container = document.createElement('div');
-    container.className = 'assistant-msg-body';
+  // Safe DOM-based markdown formatter (Guarantees zero XSS)
+  function renderSafeMarkdown(rawText) {
+    const fragment = document.createDocumentFragment();
+    if (!rawText) return fragment;
 
-    if (!text) return container;
+    const lines = rawText.split('\n');
+    let currentList = null;
 
-    // Split text into lines/paragraphs safely
-    const lines = text.split('\n');
-    lines.forEach((line, lineIdx) => {
-      if (lineIdx > 0) {
-        container.append(document.createElement('br'));
+    lines.forEach((line) => {
+      const trimmed = line.trim();
+
+      // Bullet list items
+      if (trimmed.startsWith('- ') || trimmed.startsWith('* ') || trimmed.startsWith('• ')) {
+        if (!currentList) {
+          currentList = document.createElement('ul');
+          fragment.append(currentList);
+        }
+        const li = document.createElement('li');
+        const itemText = trimmed.replace(/^[-*•]\s+/, '');
+        formatInlineContent(itemText, li);
+        currentList.append(li);
+        return;
       }
-      if (!line.trim()) return;
 
-      // Tokenize for bold (**text**), code (`text`), and verified URLs/emails
-      const parts = line.split(/(\*\*[^*]+\*\*|`[^`]+`|https?:\/\/[^\s)]+|mailto:[^\s)]+|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g);
+      currentList = null; // Close active list
 
-      parts.forEach((part) => {
-        if (!part) return;
+      // Blockquotes
+      if (trimmed.startsWith('> ')) {
+        const quote = document.createElement('blockquote');
+        formatInlineContent(trimmed.slice(2), quote);
+        fragment.append(quote);
+        return;
+      }
 
-        // Bold
-        if (part.startsWith('**') && part.endsWith('**')) {
-          const strong = document.createElement('strong');
-          strong.textContent = part.slice(2, -2);
-          container.append(strong);
-          return;
-        }
+      // Empty line
+      if (!trimmed) {
+        return;
+      }
 
-        // Inline code
-        if (part.startsWith('`') && part.endsWith('`')) {
-          const code = document.createElement('code');
-          code.textContent = part.slice(1, -1);
-          container.append(code);
-          return;
-        }
+      // Headers (### Header)
+      if (trimmed.startsWith('### ')) {
+        const h4 = document.createElement('strong');
+        h4.style.display = 'block';
+        h4.style.marginTop = '6px';
+        formatInlineContent(trimmed.slice(4), h4);
+        fragment.append(h4);
+        return;
+      }
 
-        // Email address
-        if (part.includes('@') && !part.startsWith('http')) {
-          const cleanEmail = part.replace(/[.,;!?)]+$/, '');
-          const trailing = part.slice(cleanEmail.length);
-          const mailto = `mailto:${cleanEmail}`;
-          if (ALLOWED_URLS.has(mailto)) {
-            const a = document.createElement('a');
-            a.href = mailto;
-            a.className = 'assistant-link';
-            a.textContent = cleanEmail;
-            container.append(a);
-            if (trailing) container.append(document.createTextNode(trailing));
-            return;
-          }
-        }
-
-        // URL check against allowlist
-        if (part.startsWith('http')) {
-          const cleanUrl = part.replace(/[.,;!?)]+$/, '');
-          const trailing = part.slice(cleanUrl.length);
-
-          if (ALLOWED_URLS.has(cleanUrl)) {
-            const a = document.createElement('a');
-            a.href = cleanUrl;
-            a.target = '_blank';
-            a.rel = 'noopener noreferrer';
-            a.className = 'assistant-link';
-            a.textContent = `${cleanUrl} ↗`;
-            container.append(a);
-            if (trailing) container.append(document.createTextNode(trailing));
-            return;
-          }
-        }
-
-        // Regular text node (safe by construction)
-        container.append(document.createTextNode(part));
-      });
+      // Paragraph
+      const p = document.createElement('p');
+      formatInlineContent(line, p);
+      fragment.append(p);
     });
 
-    return container;
+    return fragment;
+  }
+
+  function formatInlineContent(text, container) {
+    if (!text) return;
+
+    // Tokenize bold, code, emails, and URLs
+    const parts = text.split(
+      /(\*\*[^*]+\*\*|`[^`]+`|https?:\/\/[^\s)]+|mailto:[^\s)]+|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g
+    );
+
+    parts.forEach((part) => {
+      if (!part) return;
+
+      // Bold (**bold**)
+      if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
+        const strong = document.createElement('strong');
+        strong.textContent = part.slice(2, -2);
+        container.append(strong);
+        return;
+      }
+
+      // Inline code (`code`)
+      if (part.startsWith('`') && part.endsWith('`') && part.length > 2) {
+        const code = document.createElement('code');
+        code.textContent = part.slice(1, -1);
+        container.append(code);
+        return;
+      }
+
+      // Email address
+      if (part.includes('@') && !part.startsWith('http')) {
+        const cleanEmail = part.replace(/[.,;!?)]+$/, '');
+        const trailing = part.slice(cleanEmail.length);
+        const mailto = `mailto:${cleanEmail}`;
+        if (ALLOWED_URLS.has(mailto)) {
+          const a = document.createElement('a');
+          a.href = mailto;
+          a.className = 'assistant-link';
+          a.textContent = cleanEmail;
+          container.append(a);
+          if (trailing) container.append(document.createTextNode(trailing));
+          return;
+        }
+      }
+
+      // Verified URL
+      if (part.startsWith('http')) {
+        const cleanUrl = part.replace(/[.,;!?)]+$/, '');
+        const trailing = part.slice(cleanUrl.length);
+
+        if (ALLOWED_URLS.has(cleanUrl)) {
+          const a = document.createElement('a');
+          a.href = cleanUrl;
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+          a.className = 'assistant-link';
+          a.textContent = `${cleanUrl} ↗`;
+          container.append(a);
+          if (trailing) container.append(document.createTextNode(trailing));
+          return;
+        }
+      }
+
+      // Regular safe text node
+      container.append(document.createTextNode(part));
+    });
+  }
+
+  // Execute site-aware actions
+  function executeAction(act) {
+    if (!act) return;
+
+    // Scroll to section
+    if (act.type === 'scroll' || act.actionType === 'scroll') {
+      const targetSelector = act.target || act.url;
+      const el = document.querySelector(targetSelector);
+      if (el) {
+        if (window.innerWidth <= 640 && assistantDialog.open) {
+          closeAssistant();
+        }
+        el.scrollIntoView({ behavior: 'smooth' });
+      }
+      return;
+    }
+
+    // Open project modal dialog
+    if (act.type === 'openProject' || act.actionType === 'openProject') {
+      const projectId = act.id || act.project?.id;
+      if (typeof openProject === 'function' && projectId) {
+        if (window.innerWidth <= 640 && assistantDialog.open) {
+          closeAssistant();
+        }
+        openProject(projectId, assistantTrigger);
+      }
+      return;
+    }
+
+    // Open contact form and prefill
+    if (act.type === 'openContact' || act.actionType === 'openContact') {
+      if (window.innerWidth <= 640 && assistantDialog.open) {
+        closeAssistant();
+      }
+      const contactEl = document.querySelector('#contact');
+      contactEl?.scrollIntoView({ behavior: 'smooth' });
+      if (act.prefill?.message) {
+        const msgInput = document.querySelector('#contact-message');
+        if (msgInput) {
+          msgInput.value = act.prefill.message;
+          msgInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      }
+      document.querySelector('#contact-name')?.focus({ preventScroll: true });
+      return;
+    }
+
+    // Download resume
+    if (act.type === 'downloadResume' || act.actionType === 'downloadResume') {
+      const a = document.createElement('a');
+      a.href = './assets/Ronit_Parmar_Resume.pdf';
+      a.setAttribute('download', 'Ronit_Parmar_Resume.pdf');
+      document.body.append(a);
+      a.click();
+      a.remove();
+      toast('Downloading Ronit’s résumé…');
+      return;
+    }
+  }
+
+  // Render a project card component inside bot message
+  function renderProjectCard(proj) {
+    const card = document.createElement('div');
+    card.className = 'assistant-project-card';
+
+    const header = document.createElement('div');
+    header.className = 'assistant-project-header';
+
+    const title = document.createElement('span');
+    title.className = 'assistant-project-title';
+    title.textContent = proj.name;
+    header.append(title);
+    card.append(header);
+
+    if (proj.tagline) {
+      const tagline = document.createElement('div');
+      tagline.className = 'assistant-project-tagline';
+      tagline.textContent = proj.tagline;
+      card.append(tagline);
+    }
+
+    if (Array.isArray(proj.stack) && proj.stack.length > 0) {
+      const tagRow = document.createElement('div');
+      tagRow.className = 'assistant-project-tags';
+      proj.stack.slice(0, 5).forEach((t) => {
+        const tag = document.createElement('span');
+        tag.className = 'assistant-project-tag';
+        tag.textContent = t;
+        tagRow.append(tag);
+      });
+      card.append(tagRow);
+    }
+
+    const actionsRow = document.createElement('div');
+    actionsRow.className = 'assistant-project-actions';
+
+    // Button to open modal breakdown
+    const modalBtn = document.createElement('button');
+    modalBtn.type = 'button';
+    modalBtn.className = 'assistant-card-btn';
+    modalBtn.textContent = 'Project Breakdown ↗';
+    modalBtn.addEventListener('click', () => {
+      executeAction({ type: 'openProject', id: proj.id });
+    });
+    actionsRow.append(modalBtn);
+
+    // Live link button
+    if (proj.liveUrl && ALLOWED_URLS.has(proj.liveUrl)) {
+      const liveBtn = document.createElement('a');
+      liveBtn.className = 'assistant-card-btn';
+      liveBtn.href = proj.liveUrl;
+      liveBtn.target = '_blank';
+      liveBtn.rel = 'noopener noreferrer';
+      liveBtn.textContent = 'Live Demo ↗';
+      actionsRow.append(liveBtn);
+    }
+
+    // GitHub link button
+    if (proj.githubUrl && ALLOWED_URLS.has(proj.githubUrl)) {
+      const ghBtn = document.createElement('a');
+      ghBtn.className = 'assistant-card-btn';
+      ghBtn.href = proj.githubUrl;
+      ghBtn.target = '_blank';
+      ghBtn.rel = 'noopener noreferrer';
+      ghBtn.textContent = 'GitHub ↗';
+      actionsRow.append(ghBtn);
+    }
+
+    card.append(actionsRow);
+    return card;
   }
 
   // Render full conversation
@@ -736,7 +1010,7 @@ loadGithubRepositories();
         const bubble = document.createElement('div');
         bubble.className = 'assistant-msg assistant-msg-bot';
 
-        // Header with timestamp and copy button
+        // Header with timestamp, copy button, and feedback buttons
         const header = document.createElement('div');
         header.className = 'assistant-bot-header';
 
@@ -744,6 +1018,48 @@ loadGithubRepositories();
         titleSpan.textContent = 'PORTFOLIO GUIDE';
         header.append(titleSpan);
 
+        const toolsDiv = document.createElement('div');
+        toolsDiv.className = 'assistant-bot-header-tools';
+
+        if (turn.timestamp) {
+          const timeSpan = document.createElement('span');
+          timeSpan.className = 'assistant-msg-time';
+          timeSpan.textContent = turn.timestamp;
+          timeSpan.title = 'Message time';
+          toolsDiv.append(timeSpan);
+        }
+
+        // Thumbs-up feedback
+        const thumbsUp = document.createElement('button');
+        thumbsUp.type = 'button';
+        thumbsUp.className = `assistant-feedback-btn ${turn.feedback === 'up' ? 'active' : ''}`;
+        thumbsUp.setAttribute('aria-label', 'Helpful answer');
+        thumbsUp.title = 'Helpful';
+        thumbsUp.innerHTML = '<svg class="icon"><use href="#thumbs-up"/></svg>';
+        thumbsUp.addEventListener('click', () => {
+          turn.feedback = turn.feedback === 'up' ? null : 'up';
+          saveSession();
+          renderConversation();
+          toast(turn.feedback ? 'Thanks for the feedback!' : 'Feedback removed');
+        });
+        toolsDiv.append(thumbsUp);
+
+        // Thumbs-down feedback
+        const thumbsDown = document.createElement('button');
+        thumbsDown.type = 'button';
+        thumbsDown.className = `assistant-feedback-btn ${turn.feedback === 'down' ? 'active' : ''}`;
+        thumbsDown.setAttribute('aria-label', 'Unhelpful answer');
+        thumbsDown.title = 'Needs improvement';
+        thumbsDown.innerHTML = '<svg class="icon"><use href="#thumbs-down"/></svg>';
+        thumbsDown.addEventListener('click', () => {
+          turn.feedback = turn.feedback === 'down' ? null : 'down';
+          saveSession();
+          renderConversation();
+          toast(turn.feedback ? 'Feedback noted, thank you!' : 'Feedback removed');
+        });
+        toolsDiv.append(thumbsDown);
+
+        // Copy button
         const copyBtn = document.createElement('button');
         copyBtn.type = 'button';
         copyBtn.className = 'assistant-copy-btn';
@@ -763,34 +1079,65 @@ loadGithubRepositories();
             toast('Failed to copy.');
           }
         });
-        header.append(copyBtn);
+        toolsDiv.append(copyBtn);
+        header.append(toolsDiv);
         bubble.append(header);
 
         // Body content
-        bubble.append(buildSafeMessageBody(turn.content));
+        const bodyEl = document.createElement('div');
+        bodyEl.className = 'assistant-msg-body';
+        bodyEl.append(renderSafeMarkdown(turn.content));
+        bubble.append(bodyEl);
 
-        // Verified action chips
+        // Render project cards if actions contain project data
+        if (Array.isArray(turn.actions)) {
+          turn.actions.forEach((act) => {
+            if (act && act.project) {
+              bubble.append(renderProjectCard(act.project));
+            }
+          });
+        }
+
+        // Action chips
         if (Array.isArray(turn.actions) && turn.actions.length > 0) {
           const actionsWrap = document.createElement('div');
           actionsWrap.className = 'assistant-actions';
           actionsWrap.setAttribute('role', 'group');
-          actionsWrap.setAttribute('aria-label', 'Verified resources');
+          actionsWrap.setAttribute('aria-label', 'Verified resources & actions');
 
           turn.actions.forEach((act) => {
             if (act && act.url && ALLOWED_URLS.has(act.url)) {
-              const chip = document.createElement('a');
-              chip.className = 'assistant-action-chip';
-              chip.href = act.url;
-              chip.textContent = act.label || 'View resource ↗';
+              if (act.actionType === 'openProject' || act.actionType === 'openContact' || act.actionType === 'downloadResume') {
+                const actionButton = document.createElement('button');
+                actionButton.type = 'button';
+                actionButton.className = 'assistant-action-chip';
+                actionButton.textContent = act.label || 'Action ↗';
+                actionButton.addEventListener('click', () => {
+                  executeAction(act);
+                });
+                actionsWrap.append(actionButton);
+              } else {
+                const chip = document.createElement('a');
+                chip.className = 'assistant-action-chip';
+                chip.href = act.url;
+                chip.textContent = act.label || 'View resource ↗';
 
-              if (act.type === 'download' || act.url.endsWith('.pdf')) {
-                chip.setAttribute('download', '');
-              } else if (!act.url.startsWith('#') && !act.url.startsWith('mailto:')) {
-                chip.target = '_blank';
-                chip.rel = 'noopener noreferrer';
+                if (act.type === 'download' || act.url.endsWith('.pdf')) {
+                  chip.setAttribute('download', '');
+                } else if (!act.url.startsWith('#') && !act.url.startsWith('mailto:')) {
+                  chip.target = '_blank';
+                  chip.rel = 'noopener noreferrer';
+                }
+
+                chip.addEventListener('click', (e) => {
+                  if (act.url.startsWith('#')) {
+                    e.preventDefault();
+                    executeAction({ type: 'scroll', target: act.url });
+                  }
+                });
+
+                actionsWrap.append(chip);
               }
-
-              actionsWrap.append(chip);
             }
           });
 
@@ -831,79 +1178,223 @@ loadGithubRepositories();
       }
     });
 
-    assistantLog.scrollTop = assistantLog.scrollHeight;
+    scrollToBottomIfAllowed(false);
   }
 
-  // Submit question flow
+  // Stop button handler
+  stopBtn?.addEventListener('click', () => {
+    if (currentAbortController) {
+      currentAbortController.abort();
+      currentAbortController = null;
+      toast('Generation stopped.');
+    }
+  });
+
+  // Submit question flow with SSE streaming and live blinking caret
   async function submitQuestion(questionText) {
     const question = (questionText || assistantInput.value).trim();
     if (!question || assistantInput.disabled) return;
 
     lastFailedQuestion = null;
+    userHasScrolledUp = false;
 
-    // Append user message to conversation
+    // Reset input
+    assistantInput.value = '';
+    assistantInput.style.height = 'auto';
+    if (charCounter) charCounter.textContent = '0/350';
+
+    // Append user message
     conversation.push({ role: 'user', content: question });
     renderConversation();
 
-    // Disable input
-    assistantInput.value = '';
+    // Toggle controls
     assistantInput.disabled = true;
-    if (submitBtn) submitBtn.disabled = true;
+    if (sendBtn) sendBtn.hidden = true;
+    if (stopBtn) stopBtn.hidden = false;
 
-    // Append loading typing bubble
+    // Show initial typing indicator
     const typingBubble = document.createElement('div');
     typingBubble.className = 'assistant-msg-typing';
-    typingBubble.innerHTML = '<span class="typing-dots"><span></span><span></span><span></span></span> <span>Thinking…</span>';
+    typingBubble.innerHTML =
+      '<span class="typing-dots"><span></span><span></span><span></span></span> <span>Ronit’s guide is thinking…</span>';
     assistantLog.append(typingBubble);
-    assistantLog.scrollTop = assistantLog.scrollHeight;
+    scrollToBottomIfAllowed(true);
 
-    // Prepare bounded history payload (exclude current question)
     const historyPayload = conversation
       .slice(0, -1)
       .slice(-MAX_HISTORY_TURNS)
       .map((t) => ({ role: t.role, content: t.content }));
 
+    currentAbortController = new AbortController();
+
+    let accumulatedText = '';
+    let responseActions = [];
+    let responseSuggestions = [];
+    let botBubble = null;
+    let botBody = null;
+    let caretSpan = null;
+
     try {
       const response = await fetch(`${ASSISTANT_API}/assistant`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'text/event-stream, application/json',
+          'X-Session-ID': sessionId
+        },
         body: JSON.stringify({
           question,
-          history: historyPayload
+          history: historyPayload,
+          mode: currentMode,
+          stream: true,
+          sessionId
         }),
-        signal: AbortSignal.timeout(CLIENT_TIMEOUT_MS)
+        signal: currentAbortController.signal
       });
 
-      typingBubble.remove();
-
-      const data = await response.json().catch(() => null);
-
-      if (!response.ok || !data || !data.success) {
-        handleQueryError(data?.message || 'That is taking longer than expected to answer.', question);
+      if (!response.ok) {
+        typingBubble.remove();
+        const errJson = await response.json().catch(() => null);
+        handleQueryError(errJson?.message || 'The assistant could not complete your request right now.', question);
         return;
       }
 
-      // Successful answer received
-      conversation.push({
-        role: 'assistant',
-        content: data.answer,
-        actions: Array.isArray(data.actions) ? data.actions : [],
-        suggestions: Array.isArray(data.suggestions) ? data.suggestions : []
-      });
+      const contentType = response.headers.get('content-type') || '';
 
-      saveSession();
-      renderConversation();
+      if (contentType.includes('text/event-stream') && response.body) {
+        // SSE Streaming path
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const events = buffer.split('\n\n');
+          buffer = events.pop() || '';
+
+          for (const ev of events) {
+            const lines = ev.split('\n');
+            let eventType = 'message';
+            let dataStr = '';
+
+            for (const line of lines) {
+              if (line.startsWith('event: ')) {
+                eventType = line.slice(7).trim();
+              } else if (line.startsWith('data: ')) {
+                dataStr = line.slice(6).trim();
+              }
+            }
+
+            if (eventType === 'token' && dataStr) {
+              try {
+                const parsedData = JSON.parse(dataStr);
+                const token = parsedData.token;
+                if (token) {
+                  // On first token, remove thinking bubble and create bot bubble with caret
+                  if (!botBubble) {
+                    typingBubble.remove();
+
+                    botBubble = document.createElement('div');
+                    botBubble.className = 'assistant-msg assistant-msg-bot';
+
+                    const header = document.createElement('div');
+                    header.className = 'assistant-bot-header';
+                    header.innerHTML = '<span>PORTFOLIO GUIDE</span>';
+                    botBubble.append(header);
+
+                    botBody = document.createElement('div');
+                    botBody.className = 'assistant-msg-body';
+
+                    caretSpan = document.createElement('span');
+                    caretSpan.className = 'assistant-caret';
+                    caretSpan.setAttribute('aria-hidden', 'true');
+
+                    botBubble.append(botBody);
+                    assistantLog.append(botBubble);
+                  }
+
+                  accumulatedText += token;
+                  botBody.replaceChildren(renderSafeMarkdown(accumulatedText));
+                  botBody.append(caretSpan);
+                  scrollToBottomIfAllowed(false);
+                }
+              } catch (_) {}
+            } else if (eventType === 'meta' && dataStr) {
+              try {
+                const meta = JSON.parse(dataStr);
+                if (Array.isArray(meta.actions)) responseActions = meta.actions;
+                if (Array.isArray(meta.suggestions)) responseSuggestions = meta.suggestions;
+              } catch (_) {}
+            } else if (eventType === 'error' && dataStr) {
+              try {
+                const errData = JSON.parse(dataStr);
+                throw new Error(errData.message || 'Stream error');
+              } catch (e) {
+                throw e;
+              }
+            }
+          }
+        }
+      } else {
+        // Fallback non-streaming JSON response
+        typingBubble.remove();
+        const data = await response.json();
+        accumulatedText = data.answer || '';
+        responseActions = Array.isArray(data.actions) ? data.actions : [];
+        responseSuggestions = Array.isArray(data.suggestions) ? data.suggestions : [];
+      }
+
+      // Finalize completed response
+      typingBubble.remove();
+      caretSpan?.remove();
+
+      if (accumulatedText) {
+        const timeNow = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        conversation.push({
+          role: 'assistant',
+          content: accumulatedText,
+          actions: responseActions,
+          suggestions: responseSuggestions,
+          timestamp: timeNow
+        });
+
+        saveSession();
+        renderConversation();
+      }
     } catch (err) {
       typingBubble.remove();
-      const isTimeout = err.name === 'TimeoutError' || err.name === 'AbortError';
-      const msg = isTimeout
-        ? 'That question took too long to answer. Try retrying or emailing Ronit directly.'
-        : 'The assistant could not connect right now. Please try again in a moment.';
-      handleQueryError(msg, question);
+      caretSpan?.remove();
+
+      if (err.name === 'AbortError') {
+        // User clicked stop generating or client disconnected
+        if (accumulatedText) {
+          const timeNow = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          conversation.push({
+            role: 'assistant',
+            content: accumulatedText,
+            actions: responseActions,
+            suggestions: responseSuggestions,
+            timestamp: timeNow
+          });
+          saveSession();
+          renderConversation();
+        }
+      } else {
+        const isTimeout = err.name === 'TimeoutError';
+        const msg = isTimeout
+          ? 'That question took too long to answer. Try retrying or emailing Ronit directly.'
+          : err.message || 'The assistant could not connect right now. Please try again in a moment.';
+        handleQueryError(msg, question);
+      }
     } finally {
+      currentAbortController = null;
       assistantInput.disabled = false;
-      if (submitBtn) submitBtn.disabled = false;
-      assistantLog.scrollTop = assistantLog.scrollHeight;
+      if (stopBtn) stopBtn.hidden = true;
+      if (sendBtn) sendBtn.hidden = false;
+      scrollToBottomIfAllowed(true);
       assistantInput.focus({ preventScroll: true });
     }
   }
@@ -943,7 +1434,7 @@ loadGithubRepositories();
 
     errorBubble.append(retryRow);
     assistantLog.append(errorBubble);
-    assistantLog.scrollTop = assistantLog.scrollHeight;
+    scrollToBottomIfAllowed(true);
   }
 
   assistantForm.addEventListener('submit', (e) => {
@@ -951,8 +1442,12 @@ loadGithubRepositories();
     submitQuestion();
   });
 
+  // Expose global helper for actions if needed
+  window.assistantOpenProject = (id) => executeAction({ type: 'openProject', id });
+
   // Initialize session on page load
   loadSession();
 })();
+
 
 

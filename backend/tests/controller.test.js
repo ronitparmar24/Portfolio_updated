@@ -94,3 +94,56 @@ test('assistant.controller: returns 503 if assistant feature is not configured',
     features.assistant = originalState;
   }
 });
+
+test('assistant.controller: rejects invalid mode parameter', async () => {
+  features.assistant = true;
+
+  const req = {
+    body: {
+      question: 'Tell me about MetroMind',
+      mode: 'unsupported-mode'
+    }
+  };
+  const res = createMockResponse();
+
+  await askQuestion(req, res);
+  assert.equal(res.statusCode, 400);
+  assert.equal(res.body.success, false);
+  assert.equal(res.body.code, 'VALIDATION_ERROR');
+});
+
+test('assistant.controller: enforces per-session question limit', async () => {
+  features.assistant = true;
+  const testSessionId = `test-session-limit-${Date.now()}`;
+
+  // Fill up session limit quota (25 requests)
+  for (let i = 0; i < 25; i++) {
+    const req = {
+      body: {
+        question: `Question turn ${i}`,
+        sessionId: testSessionId,
+        stream: false
+      }
+    };
+    const res = createMockResponse();
+    // Use short question format that triggers session counter check
+    await askQuestion(req, res);
+  }
+
+  // 26th request must be rate limited
+  const overflowReq = {
+    body: {
+      question: 'One question too many in this session',
+      sessionId: testSessionId,
+      stream: false
+    }
+  };
+  const overflowRes = createMockResponse();
+  await askQuestion(overflowReq, overflowRes);
+
+  assert.equal(overflowRes.statusCode, 429);
+  assert.equal(overflowRes.body.success, false);
+  assert.equal(overflowRes.body.code, 'SESSION_LIMIT');
+  assert.ok(overflowRes.body.message.includes('asked several questions'));
+});
+
