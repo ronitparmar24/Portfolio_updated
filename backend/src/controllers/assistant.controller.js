@@ -73,7 +73,7 @@ export async function askQuestion(req, res) {
   }
 
   const { question, history, mode, stream, sessionId } = parsed.data;
-  const effectiveSessionId = sessionId || req.headers['x-session-id'];
+  const effectiveSessionId = sessionId || req.headers?.['x-session-id'];
 
   if (effectiveSessionId && !checkSessionLimit(effectiveSessionId)) {
     return res.status(429).json({
