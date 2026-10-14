@@ -213,3 +213,43 @@ test('askAssistant: falls back to secondary model if primary model fails with 50
     process.env.GROQ_API_KEY = originalKey;
   }
 });
+
+test('BM25Index: retrieves top relevant documents accurately', async () => {
+  const { BM25Index } = await import('../src/services/bm25.service.js');
+  const docs = [
+    { id: '1', title: 'React Frontend', category: 'frontend', content: 'Modern React interfaces, Vite, TypeScript, and DOM manipulation.' },
+    { id: '2', title: 'PostgreSQL Database', category: 'db', content: 'Relational database modeling with PL/pgSQL stored procedures.' },
+    { id: '3', title: 'Machine Learning', category: 'ml', content: 'scikit-learn crowd prediction models and regression algorithms.' }
+  ];
+
+  const index = new BM25Index(docs);
+  const mlResults = index.search('crowd prediction scikit-learn');
+  assert.ok(mlResults.length > 0);
+  assert.equal(mlResults[0].document.id, '3');
+
+  const reactResults = index.search('React TypeScript UI');
+  assert.ok(reactResults.length > 0);
+  assert.equal(reactResults[0].document.id, '1');
+});
+
+test('assistantKnowledge: mode parameter changes system prompt tone directives', () => {
+  const recruiterPrompt = buildRelevantKnowledge('Tell me about Ronit', [], { mode: 'recruiter' });
+  assert.ok(recruiterPrompt.includes('MODE: RECRUITER'));
+
+  const techPrompt = buildRelevantKnowledge('Tell me about Ronit', [], { mode: 'technical' });
+  assert.ok(techPrompt.includes('MODE: TECHNICAL'));
+  assert.ok(techPrompt.includes('trade-offs') || techPrompt.includes('architecture'));
+
+  const casualPrompt = buildRelevantKnowledge('Tell me about Ronit', [], { mode: 'casual' });
+  assert.ok(casualPrompt.includes('MODE: CASUAL'));
+});
+
+test('assistant.service: detectQuestionCategory categorizes user queries correctly', async () => {
+  const { detectQuestionCategory } = await import('../src/services/assistant.service.js');
+  assert.equal(detectQuestionCategory('Is Ronit a good fit for our software engineer role?'), 'career-and-fit');
+  assert.equal(detectQuestionCategory('Tell me about MetroMind and CinePulse'), 'projects');
+  assert.equal(detectQuestionCategory('What databases and backend frameworks does he use?'), 'technical-stack');
+  assert.equal(detectQuestionCategory('Which college does Ronit attend and what is his CGPA?'), 'education');
+  assert.equal(detectQuestionCategory('What is Ronit’s email address?'), 'contact');
+});
+

@@ -13,6 +13,28 @@ const turnSchema = z.object({
     .max(800, 'History message must not exceed 800 characters.')
 });
 
+const sessionQueryTracker = new Map();
+const SESSION_WINDOW_MS = 60 * 60 * 1000;
+const SESSION_MAX_QUESTIONS = 25;
+
+function checkSessionLimit(sessionId) {
+  if (!sessionId) return true;
+  const now = Date.now();
+  const record = sessionQueryTracker.get(sessionId) || { count: 0, resetAt: now + SESSION_WINDOW_MS };
+  if (now > record.resetAt) {
+    record.count = 1;
+    record.resetAt = now + SESSION_WINDOW_MS;
+    sessionQueryTracker.set(sessionId, record);
+    return true;
+  }
+  if (record.count >= SESSION_MAX_QUESTIONS) {
+    return false;
+  }
+  record.count += 1;
+  sessionQueryTracker.set(sessionId, record);
+  return true;
+}
+
 const assistantQuerySchema = z.object({
   question: z
     .string({ required_error: 'Question is required' })
@@ -21,7 +43,8 @@ const assistantQuerySchema = z.object({
     .max(350, 'Question must not exceed 350 characters.'),
   history: z.array(turnSchema).max(8, 'History cannot exceed 8 messages.').optional().default([]),
   mode: z.enum(['recruiter', 'technical', 'casual']).optional().default('recruiter'),
-  stream: z.boolean().optional().default(true)
+  stream: z.boolean().optional().default(true),
+  sessionId: z.string().trim().max(80).optional()
 });
 
 /**
@@ -47,7 +70,16 @@ export async function askQuestion(req, res) {
     });
   }
 
-  const { question, history, mode, stream } = parsed.data;
+  const { question, history, mode, stream, sessionId } = parsed.data;
+  const effectiveSessionId = sessionId || req.headers['x-session-id'];
+
+  if (effectiveSessionId && !checkSessionLimit(effectiveSessionId)) {
+    return res.status(429).json({
+      success: false,
+      code: 'SESSION_LIMIT',
+      message: "You've asked several questions in this session! To chat further or schedule an interview, please reach Ronit directly at ronitparmar.work@gmail.com."
+    });
+  }
   const isStreamingRequested = stream !== false && typeof res.writeHead === 'function' && typeof res.write === 'function';
 
   // Client abort handling
