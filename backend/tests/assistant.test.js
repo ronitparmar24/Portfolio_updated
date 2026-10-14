@@ -233,6 +233,10 @@ test('BM25Index: retrieves top relevant documents accurately', async () => {
 });
 
 test('assistantKnowledge: mode parameter changes system prompt tone directives', () => {
+  const autoPrompt = buildRelevantKnowledge('Tell me about Ronit', [], { mode: 'auto' });
+  assert.ok(autoPrompt.includes('MODE: AUTO-ADAPTIVE'));
+  assert.ok(autoPrompt.includes('FLAGSHIP HIGHLIGHTS') || autoPrompt.includes('FLAGSHIP SHOWCASE'));
+
   const recruiterPrompt = buildRelevantKnowledge('Tell me about Ronit', [], { mode: 'recruiter' });
   assert.ok(recruiterPrompt.includes('MODE: RECRUITER'));
 
