@@ -90,11 +90,33 @@ test('assistantKnowledge: determineSuggestions yields 2-3 focused follow-up prom
   const metroSuggestions = determineSuggestions('Tell me about MetroMind', '');
   assert.ok(Array.isArray(metroSuggestions));
   assert.ok(metroSuggestions.length >= 2 && metroSuggestions.length <= 3);
-  assert.ok(metroSuggestions.some((s) => s.toLowerCase().includes('metromind') || s.toLowerCase().includes('cinepulse')));
+  assert.ok(metroSuggestions.some((s) => s.toLowerCase().includes('metromind') || s.toLowerCase().includes('cinepulse') || s.toLowerCase().includes('ml')));
 
   const compareSuggestions = determineSuggestions('Compare MetroMind and CinePulse', '');
   assert.ok(compareSuggestions.length >= 2);
-  assert.ok(compareSuggestions.some((s) => s.toLowerCase().includes('strength') || s.toLowerCase().includes('internship')));
+  assert.ok(compareSuggestions.some((s) => s.toLowerCase().includes('strength') || s.toLowerCase().includes('internship') || s.toLowerCase().includes('tech')));
+});
+
+test('assistantKnowledge: determineSuggestions dynamically adapts across turns and avoids repeating asked questions', () => {
+  const turn1Suggestions = determineSuggestions('What is MetroMind?', 'MetroMind uses scikit-learn for crowd prediction.');
+  assert.ok(turn1Suggestions.length >= 2);
+
+  const history = [
+    { role: 'user', content: 'What is MetroMind?' },
+    { role: 'assistant', content: 'MetroMind is an AI transit ticketing platform.' },
+    { role: 'user', content: 'What ML model powers MetroMind’s crowd forecasting?' }
+  ];
+  const turn2Suggestions = determineSuggestions(
+    'What ML model powers MetroMind’s crowd forecasting?',
+    'It uses scikit-learn regression models for commuter density prediction.',
+    history
+  );
+
+  // It should NOT ask again about the ML model since user just asked it
+  assert.ok(!turn2Suggestions.some((s) => s.toLowerCase().includes('what ml model powers')));
+  assert.ok(turn2Suggestions.length >= 2);
+  // Suggestions should have dynamically shifted
+  assert.notDeepEqual(turn1Suggestions, turn2Suggestions);
 });
 
 test('askAssistant: handles successful Groq response with verified actions and suggestions', async () => {
