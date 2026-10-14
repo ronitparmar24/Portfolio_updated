@@ -672,6 +672,55 @@ dialog#assistant-dialog .dialog-close .icon {
   padding-bottom: 6px;
 }
 
+.assistant-bot-header-tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.assistant-msg-time {
+  font-size: 9px;
+  color: var(--muted);
+  opacity: 0.8;
+  margin-right: 4px;
+}
+
+.assistant-feedback-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 0;
+}
+
+.assistant-feedback-btn:hover {
+  background: var(--surface-raised);
+  color: var(--text);
+  border-color: var(--line);
+}
+
+.assistant-feedback-btn.active {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--surface-raised);
+}
+
+[data-theme="light"] .assistant-feedback-btn.active {
+  color: #4b6a18;
+}
+
+.assistant-feedback-btn .icon {
+  width: 12px;
+  height: 12px;
+}
+
 .assistant-copy-btn {
   display: inline-flex;
   align-items: center;
@@ -708,8 +757,55 @@ dialog#assistant-dialog .dialog-close .icon {
 }
 
 .assistant-msg-body {
-  white-space: pre-wrap;
   color: var(--text);
+  line-height: 1.6;
+}
+
+.assistant-msg-body p {
+  margin: 0 0 8px 0;
+}
+
+.assistant-msg-body p:last-child {
+  margin-bottom: 0;
+}
+
+.assistant-msg-body ul {
+  margin: 4px 0 8px 18px;
+  padding: 0;
+}
+
+.assistant-msg-body li {
+  margin-bottom: 4px;
+  line-height: 1.5;
+}
+
+.assistant-msg-body blockquote {
+  border-left: 3px solid var(--accent);
+  margin: 6px 0;
+  padding-left: 10px;
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* Blinking caret for real-time token streaming */
+.assistant-caret {
+  display: inline-block;
+  width: 7px;
+  height: 14px;
+  vertical-align: -2px;
+  margin-left: 2px;
+  background: var(--accent);
+  border-radius: 1px;
+  animation: caretBlink 0.9s infinite step-end;
+}
+
+[data-theme="light"] .assistant-caret {
+  background: #4b6a18;
+}
+
+@keyframes caretBlink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
 }
 
 .assistant-msg a.assistant-link {
@@ -728,6 +824,89 @@ dialog#assistant-dialog .dialog-close .icon {
   opacity: 0.8;
   text-decoration-thickness: 2px;
 }
+
+/* Rich Project Cards */
+.assistant-project-card {
+  margin-top: 6px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-raised);
+  padding: 11px 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.assistant-project-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.assistant-project-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.2px;
+}
+
+.assistant-project-tagline {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.assistant-project-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.assistant-project-tag {
+  font-size: 9.5px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+
+.assistant-project-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 3px;
+}
+
+.assistant-card-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  font-size: 10.5px;
+  font-weight: 650;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.assistant-card-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--bg);
+  transform: translateY(-1px);
+}
+
+[data-theme="light"] .assistant-card-btn:hover {
+  color: #3b5812;
+}
+
 
 /* Verified Action Cards */
 .assistant-actions {
@@ -871,38 +1050,118 @@ dialog#assistant-dialog .dialog-close .icon {
   height: 13px;
 }
 
+/* Jump to latest floating pill */
+.assistant-jump-pill {
+  position: absolute;
+  bottom: 74px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  padding: 5px 14px;
+  font-size: 11px;
+  font-weight: 650;
+  border-radius: 20px;
+  background: var(--surface-raised);
+  border: 1px solid var(--accent);
+  color: var(--text);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  animation: jumpFadeIn 0.2s ease forwards;
+}
+
+.assistant-jump-pill:hover {
+  background: var(--surface);
+  color: var(--accent);
+}
+
+@keyframes jumpFadeIn {
+  from { opacity: 0; transform: translate(-50%, 8px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
 /* Form input */
 .assistant-form {
   display: flex;
   gap: 8px;
   border-top: 1px solid var(--line);
-  padding-top: 12px;
+  padding-top: 10px;
   margin-top: auto;
   flex-shrink: 0;
   align-items: center;
+  position: relative;
 }
 
 .assistant-input-wrap {
   flex: 1;
   position: relative;
+  display: flex;
+  align-items: center;
 }
 
-.assistant-form input {
+.assistant-form textarea {
   width: 100%;
   border: 1px solid var(--line);
-  border-radius: 24px;
-  padding: 10px 16px;
+  border-radius: 20px;
+  padding: 9px 48px 9px 14px;
   background: var(--surface);
   color: var(--text);
+  font-family: inherit;
   font-size: 13px;
   line-height: 1.4;
+  resize: none;
+  min-height: 38px;
+  max-height: 80px;
+  scrollbar-width: none;
   transition: border-color 0.2s, box-shadow 0.2s;
+  overflow-y: hidden;
 }
 
-.assistant-form input:focus-visible {
+.assistant-form textarea:focus-visible {
   outline: 2px solid var(--purple);
   outline-offset: 1px;
   border-color: var(--purple);
+}
+
+.assistant-char-counter {
+  position: absolute;
+  right: 12px;
+  font-size: 9px;
+  color: var(--muted);
+  pointer-events: none;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.8;
+}
+
+/* Stop generating button */
+.assistant-stop-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 13px;
+  height: 38px;
+  border-radius: 20px;
+  background: rgba(220, 60, 60, 0.15);
+  border: 1px solid rgba(220, 60, 60, 0.5);
+  color: #ff6b6b;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.assistant-stop-btn:hover {
+  background: rgba(220, 60, 60, 0.28);
+  border-color: #ff6b6b;
+  transform: scale(1.02);
+}
+
+.assistant-stop-btn .icon {
+  width: 11px;
+  height: 11px;
 }
 
 .assistant-send-btn {
