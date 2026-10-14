@@ -65,3 +65,11 @@ export async function getRepositories() {
 
   return { cached: false, data };
 }
+
+/**
+ * Synchronous accessor for currently cached GitHub repo data.
+ */
+export function getCachedRepositories() {
+  return cache.data || null;
+}
+
