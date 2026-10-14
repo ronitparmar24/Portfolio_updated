@@ -711,10 +711,10 @@ export function determineSuggestionPool(question = '', answer = '', history = []
  * the model's generated answer, and prior conversation history.
  *
  * Incorporates:
+ * - Direct primary topic deep-dive guarantee (Slot 1 always anchors to the discussed subject)
  * - Real-world timestamp entropy (rotates dynamically over time, not statically)
  * - Turn count offset (changes dynamically across conversation turns)
- * - Question hash (ensures different questions receive distinct entry points)
- * - Category diversity (ensures suggestions cover diverse angles: flagship, tech, hiring)
+ * - Cross-category diversity (balances project depth, architecture, and recruiter next-steps)
  *
  * @param {string} question - Current user question
  * @param {string} answer - Model generated answer
@@ -726,51 +726,68 @@ export function determineSuggestions(question = '', answer = '', history = [], o
   const candidatePool = determineSuggestionPool(question, answer, history);
   if (candidatePool.length === 0) {
     return [
-      'Tell me about his flagship MetroMind',
+      'Tell me about his flagship project MetroMind',
       'Tell me about CinePulse (PostgreSQL)',
       'Is Ronit open to full-stack internships?'
     ];
   }
 
-  // Dynamic time-based & turn-based entropy:
-  // Uses seconds timestamp, turn index, and question character sum to guarantee
-  // that suggestions rotate dynamically in real time and across conversation turns.
   const timeEntropy = typeof options.timeSeed === 'number'
     ? options.timeSeed
-    : Math.floor(Date.now() / 15000); // dynamic rotation window every 15 seconds
+    : Math.floor(Date.now() / 15000);
   const turnIndex = history.length;
   const queryHash = Array.from(question || '').reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
 
-  const poolLen = candidatePool.length;
-  const offset = poolLen > 0 ? (turnIndex * 3 + timeEntropy + queryHash) % poolLen : 0;
-
-  const rotatedPool = [
-    ...candidatePool.slice(offset),
-    ...candidatePool.slice(0, offset)
-  ];
+  // Group candidates into primary contextual deep-dives vs broader exploration
+  const primaryCandidates = candidatePool.filter(
+    (c) => c.weight >= 10 || c.category.includes('deep') || c.category.includes('flagship')
+  );
 
   const selected = [];
   const seenCategories = new Set();
   const limit = Math.min(options.limit || 3, 3);
 
-  // Pass 1: pick across distinct categories for high diversity
-  for (const item of rotatedPool) {
-    if (selected.length >= limit) break;
-    if (!seenCategories.has(item.category) || poolLen <= 4) {
+  // 1. Slot 1: Anchor on a high-relevance topic candidate, rotating dynamically with time & turn
+  if (primaryCandidates.length > 0) {
+    const primaryOffset = (turnIndex + timeEntropy + queryHash) % primaryCandidates.length;
+    const rotatedPrimary = [
+      ...primaryCandidates.slice(primaryOffset),
+      ...primaryCandidates.slice(0, primaryOffset)
+    ];
+    for (const item of rotatedPrimary) {
+      if (selected.length >= 1) break;
       selected.push(item.text);
       seenCategories.add(item.category);
     }
   }
 
-  // Pass 2: fill remaining slots from rotated pool
-  for (const item of rotatedPool) {
+  // 2. Slots 2 & 3: Rotate across remaining pool ensuring category diversity
+  const remainingPool = candidatePool.filter((c) => !selected.includes(c.text));
+  const remainingOffset = remainingPool.length > 0
+    ? (turnIndex * 2 + timeEntropy + queryHash) % remainingPool.length
+    : 0;
+  const rotatedRemaining = [
+    ...remainingPool.slice(remainingOffset),
+    ...remainingPool.slice(0, remainingOffset)
+  ];
+
+  for (const item of rotatedRemaining) {
+    if (selected.length >= limit) break;
+    if (!seenCategories.has(item.category) || remainingPool.length <= 4) {
+      selected.push(item.text);
+      seenCategories.add(item.category);
+    }
+  }
+
+  // 3. Fallback fill from rotated candidates to satisfy limit
+  for (const item of rotatedRemaining) {
     if (selected.length >= limit) break;
     if (!selected.includes(item.text)) {
       selected.push(item.text);
     }
   }
 
-  // Pass 3: absolute guarantee that at least 2 suggestions are always returned
+  // 4. Absolute guarantee that at least 2 suggestions are always returned
   for (const item of candidatePool) {
     if (selected.length >= 2) break;
     if (!selected.includes(item.text)) {
