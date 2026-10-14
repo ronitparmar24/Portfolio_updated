@@ -3,6 +3,7 @@ import {
   buildRelevantKnowledge,
   determineActions,
   determineSuggestions,
+  determineSuggestionPool,
   ALLOWED_URL_SET
 } from './assistantKnowledge.js';
 
@@ -125,10 +126,14 @@ export async function askAssistantStream({
       onToken(entry.answer);
       const latencyMs = Date.now() - startTime;
       console.log(`[assistant-telemetry] category=${category} mode=${mode} latency=${latencyMs}ms cached=true`);
+      // Compute fresh, dynamic time-adapted suggestions even for cached responses
+      const freshSuggestions = determineSuggestions(question, entry.answer, safeHistory);
+      const dynamicCandidates = determineSuggestionPool(question, entry.answer, safeHistory);
       return {
         answer: entry.answer,
         actions: entry.actions,
-        suggestions: entry.suggestions
+        suggestions: freshSuggestions,
+        dynamicPool: dynamicCandidates.map((c) => c.text)
       };
     }
     responseCache.delete(cacheKey);
@@ -267,11 +272,14 @@ export async function askAssistantStream({
           const rawActions = determineActions(question, finalAnswer, safeHistory);
           const verifiedActions = rawActions.filter((act) => act && ALLOWED_URL_SET.has(act.url));
           const suggestions = determineSuggestions(question, finalAnswer, safeHistory);
+          const dynamicCandidates = determineSuggestionPool(question, finalAnswer, safeHistory);
+          const dynamicPool = dynamicCandidates.map((c) => c.text);
 
           const result = {
             answer: finalAnswer,
             actions: verifiedActions,
-            suggestions
+            suggestions,
+            dynamicPool
           };
 
           // Cache standalone questions to minimize costs and latency

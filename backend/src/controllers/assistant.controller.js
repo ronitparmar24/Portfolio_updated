@@ -101,7 +101,8 @@ export async function askQuestion(req, res) {
         success: true,
         answer: result.answer,
         actions: result.actions || [],
-        suggestions: result.suggestions || []
+        suggestions: result.suggestions || [],
+        dynamicPool: result.dynamicPool || []
       });
     } catch (error) {
       return handleAssistantError(error, res);
@@ -141,7 +142,8 @@ export async function askQuestion(req, res) {
       res.write(
         `event: meta\ndata: ${JSON.stringify({
           actions: result.actions || [],
-          suggestions: result.suggestions || []
+          suggestions: result.suggestions || [],
+          dynamicPool: result.dynamicPool || []
         })}\n\n`
       );
 
