@@ -448,14 +448,24 @@ dialog#assistant-dialog h2#assistant-title {
 }
 
 .assistant-header-actions {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
-.assistant-header-btn {
+dialog#assistant-dialog .assistant-header-actions .assistant-header-btn,
+dialog#assistant-dialog .dialog-close,
+dialog#assistant-dialog .assistant-header-btn {
+  position: static !important;
+  top: auto !important;
+  right: auto !important;
+  left: auto !important;
+  bottom: auto !important;
   width: 32px;
   height: 32px;
+  margin: 0;
+  padding: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -465,16 +475,25 @@ dialog#assistant-dialog h2#assistant-title {
   color: var(--muted);
   transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.2s;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
-.assistant-header-btn:hover {
+.assistant-header-actions .assistant-header-btn:hover,
+dialog#assistant-dialog .dialog-close:hover {
   background: var(--surface-raised);
   color: var(--text);
   border-color: var(--accent);
-  transform: scale(1.05);
+  transform: scale(1.06);
 }
 
-.assistant-header-btn .icon {
+.assistant-header-actions .assistant-header-btn:focus-visible,
+dialog#assistant-dialog .dialog-close:focus-visible {
+  outline: 2px solid var(--purple);
+  outline-offset: 2px;
+}
+
+.assistant-header-actions .assistant-header-btn .icon,
+dialog#assistant-dialog .dialog-close .icon {
   width: 15px;
   height: 15px;
 }
