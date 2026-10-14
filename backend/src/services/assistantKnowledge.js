@@ -544,63 +544,164 @@ export function determineActions(question = '', answer = '', history = []) {
 }
 
 /**
- * Determine 2-3 contextual follow-up suggestions.
+ * Determine dynamic, context-aware follow-up suggestions based on the current question,
+ * the model's generated answer, and prior conversation history.
+ *
+ * Ensures:
+ * 1. Suggestions adapt directly to topics mentioned in the latest answer.
+ * 2. Questions already asked in the conversation are never repeated.
+ * 3. Follow-up options rotate dynamically over conversation turns.
+ * 4. Flagships MetroMind and CinePulse are prioritized whenever projects are relevant.
  */
 export function determineSuggestions(question = '', answer = '', history = []) {
   const q = question.toLowerCase();
   const a = answer.toLowerCase();
 
-  if (q.includes('fit') || q.includes('job') || q.includes('role') || q.includes('requirement')) {
-    return [
-      'Tell me about MetroMind',
-      'Download Ronit’s résumé',
-      'How to contact Ronit directly'
-    ];
+  // 1. Gather all past user questions to prevent repeating topics already asked
+  const pastUserQuestions = [
+    q,
+    ...history.filter((h) => h.role === 'user').map((h) => (h.content || '').toLowerCase())
+  ].join(' ');
+
+  const hasAsked = (keyword) => pastUserQuestions.includes(keyword.toLowerCase());
+
+  // 2. High-quality suggestion pools categorized by domain
+  const candidatePool = [];
+
+  // MetroMind deep-dives
+  if (a.includes('metromind') || q.includes('metromind') || a.includes('crowd') || a.includes('transit') || a.includes('metro')) {
+    if (!hasAsked('ml model') && !hasAsked('crowd prediction') && !hasAsked('scikit')) {
+      candidatePool.push({ text: 'What ML model powers MetroMind’s crowd forecasting?', weight: 10, category: 'project-deep' });
+    }
+    if (!hasAsked('dynamic fare') && !hasAsked('fare') && !hasAsked('qr pass')) {
+      candidatePool.push({ text: 'How does MetroMind handle QR ticketing and fares?', weight: 8, category: 'project-deep' });
+    }
+    if (!hasAsked('dual-backend') && !hasAsked('django') && !hasAsked('microservice')) {
+      candidatePool.push({ text: 'Why did Ronit use a dual Node/Django backend in MetroMind?', weight: 9, category: 'architecture' });
+    }
   }
 
-  if (q.includes('metromind') && !q.includes('cinepulse')) {
-    return [
-      'What ML model powers MetroMind?',
-      'Tell me about CinePulse',
-      'Is Ronit available for an internship?'
-    ];
+  // CinePulse deep-dives
+  if (a.includes('cinepulse') || q.includes('cinepulse') || a.includes('movie') || a.includes('postgres') || a.includes('tmdb')) {
+    if (!hasAsked('stored procedure') && !hasAsked('pl/pgsql') && !hasAsked('plpgsql')) {
+      candidatePool.push({ text: 'How does CinePulse use PL/pgSQL stored procedures?', weight: 10, category: 'project-deep' });
+    }
+    if (!hasAsked('tmdb') && !hasAsked('cache') && !hasAsked('watchlist')) {
+      candidatePool.push({ text: 'How does CinePulse cache TMDB API queries and watchlists?', weight: 8, category: 'project-deep' });
+    }
   }
 
-  if (q.includes('cinepulse') && !q.includes('metromind')) {
-    return [
-      'How does CinePulse use PostgreSQL?',
-      'Tell me about MetroMind',
-      'Download Ronit’s résumé'
-    ];
+  // Cross-suggest the other flagship if only one was discussed
+  if ((a.includes('metromind') || q.includes('metromind')) && !hasAsked('cinepulse')) {
+    candidatePool.push({ text: 'Tell me about CinePulse (PostgreSQL)', weight: 9, category: 'flagship' });
+  }
+  if ((a.includes('cinepulse') || q.includes('cinepulse')) && !hasAsked('metromind')) {
+    candidatePool.push({ text: 'Tell me about MetroMind (AI Transit)', weight: 9, category: 'flagship' });
   }
 
-  if (q.includes('intern') || q.includes('availab') || q.includes('hire') || q.includes('start')) {
-    return [
-      'What are his core technical strengths?',
-      'Summarize Ronit in 30 seconds',
-      'How can I schedule an interview?'
-    ];
+  // DigiKhata / Ledger / Database
+  if ((a.includes('digikhata') || q.includes('digikhata') || a.includes('ledger') || a.includes('mongodb')) && !hasAsked('digikhata')) {
+    candidatePool.push({ text: 'How does DigiKhata structure merchant debt ledgers in MongoDB?', weight: 7, category: 'project' });
   }
 
-  if (q.includes('stack') || q.includes('skill') || q.includes('tech')) {
-    return [
-      'Best project to look at first',
-      'Is he a fit for a full-stack internship?',
-      'Tell me about his creative video editing work'
-    ];
+  // Tech Stack & Architecture
+  if (a.includes('stack') || a.includes('react') || a.includes('node') || q.includes('stack') || q.includes('tech') || q.includes('skill')) {
+    if (!hasAsked('core technical strengths') && !hasAsked('strength')) {
+      candidatePool.push({ text: 'What are his core technical strengths?', weight: 9, category: 'tech' });
+    }
+    if (!hasAsked('database') && !hasAsked('postgres vs mongo')) {
+      candidatePool.push({ text: 'What database does Ronit prefer: PostgreSQL or MongoDB?', weight: 8, category: 'tech' });
+    }
+    if (!hasAsked('metromind') && !hasAsked('cinepulse')) {
+      candidatePool.push({ text: 'What is the best project to look at first?', weight: 8, category: 'flagship' });
+    }
   }
 
-  if (q.includes('contact') || q.includes('email')) {
-    return [
-      'What are his flagship projects?',
-      'Download Ronit’s résumé',
-      'Explore his GitHub repositories'
-    ];
+  // Hiring, Internship, Scheduling & Fit Check
+  if (a.includes('intern') || a.includes('availab') || a.includes('hire') || q.includes('intern') || q.includes('fit') || q.includes('hire') || q.includes('job')) {
+    if (!hasAsked('schedule') && !hasAsked('start date') && !hasAsked('weekly')) {
+      candidatePool.push({ text: 'What is Ronit’s availability and preferred start date?', weight: 9, category: 'recruiter' });
+    }
+    if (!hasAsked('interview') && !hasAsked('schedule an interview') && !hasAsked('prefill')) {
+      candidatePool.push({ text: 'How can I schedule an interview with Ronit?', weight: 8, category: 'recruiter' });
+    }
+    if (!hasAsked('resume') && !hasAsked('résumé') && !hasAsked('cv')) {
+      candidatePool.push({ text: 'Download Ronit’s résumé (PDF)', weight: 9, category: 'recruiter' });
+    }
   }
 
-  return [
-    'Best project to look at first',
-    'Is he a fit for a full-stack internship?',
-    'Tech stack overview'
+  // Academic Achievements & Honors
+  if (a.includes('lj') || a.includes('cgpa') || a.includes('education') || q.includes('education') || q.includes('award') || q.includes('achieve') || q.includes('research')) {
+    if (!hasAsked('lakshya') && !hasAsked('prompt craft')) {
+      candidatePool.push({ text: 'Tell me about Ronit’s award at Lakshya 2.0 Prompt Craft', weight: 8, category: 'achievement' });
+    }
+    if (!hasAsked('icraet') && !hasAsked('swarm intelligence') && !hasAsked('paper')) {
+      candidatePool.push({ text: 'What was Ronit’s research paper on Swarm Intelligence at ICRAET?', weight: 8, category: 'achievement' });
+    }
+  }
+
+  // Video Editing / Creative background
+  if (a.includes('video') || a.includes('freelance') || a.includes('edit') || q.includes('creative') || q.includes('video')) {
+    if (!hasAsked('translate') && !hasAsked('ui/ux') && !hasAsked('influence')) {
+      candidatePool.push({ text: 'How does his 3+ years video editing background influence his code?', weight: 8, category: 'creative' });
+    }
+  }
+
+  // Compare MetroMind and CinePulse context
+  if (q.includes('compare') || (q.includes('metromind') && q.includes('cinepulse'))) {
+    candidatePool.push({ text: 'What are his core technical strengths?', weight: 10, category: 'tech' });
+    candidatePool.push({ text: 'Is Ronit available for an internship?', weight: 9, category: 'recruiter' });
+  }
+
+  // Evergreen rotating fallbacks if candidatePool needs depth
+  const evergreenOptions = [
+    { text: '🌟 Tell me about his flagship project MetroMind', weight: 6, tag: 'metromind', category: 'flagship' },
+    { text: '🎬 How does CinePulse use PostgreSQL stored procedures?', weight: 6, tag: 'cinepulse', category: 'flagship' },
+    { text: '⚡ Summarize Ronit in 30 seconds for a recruiter', weight: 5, tag: 'summary', category: 'summary' },
+    { text: '💼 Is Ronit open to full-stack developer internships?', weight: 6, tag: 'internship', category: 'recruiter' },
+    { text: '🏆 What awards and research has Ronit published?', weight: 5, tag: 'awards', category: 'achievement' },
+    { text: '🎨 Tell me about his creative video editing experience', weight: 4, tag: 'video', category: 'creative' },
+    { text: '📄 Download Ronit’s official résumé', weight: 5, tag: 'resume', category: 'recruiter' },
+    { text: '📬 How can I contact Ronit to interview him?', weight: 5, tag: 'contact', category: 'recruiter' }
   ];
+
+  evergreenOptions.forEach((opt) => {
+    if (!hasAsked(opt.tag) && !candidatePool.some((c) => c.text === opt.text)) {
+      candidatePool.push({ text: opt.text, weight: opt.weight, category: opt.category });
+    }
+  });
+
+  // Dynamic turn-based and time-based rotation:
+  // Sort candidate pool by weight descending
+  candidatePool.sort((a, b) => b.weight - a.weight);
+
+  const turnIndex = history.length;
+  const selected = [];
+  const seenCategories = new Set();
+
+  // Rotate through candidate pool with turn offset for dynamic variation across turns
+  const poolLen = candidatePool.length;
+  const offset = poolLen > 0 ? turnIndex % poolLen : 0;
+  const rotatedPool = [
+    ...candidatePool.slice(offset),
+    ...candidatePool.slice(0, offset)
+  ];
+
+  for (const item of rotatedPool) {
+    if (selected.length >= 3) break;
+    if (!seenCategories.has(item.category) || candidatePool.length <= 4) {
+      selected.push(item.text);
+      seenCategories.add(item.category);
+    }
+  }
+
+  // Ensure at least 2 suggestions are always returned
+  for (const item of candidatePool) {
+    if (selected.length >= 3) break;
+    if (!selected.includes(item.text)) {
+      selected.push(item.text);
+    }
+  }
+
+  return selected.slice(0, 3);
 }
