@@ -545,6 +545,12 @@ loadGithubRepositories();
     });
   });
 
+  // Ensure controls are in clean initial state
+  if (stopBtn) stopBtn.hidden = true;
+  if (sendBtn) sendBtn.hidden = false;
+  if (jumpBtn) jumpBtn.hidden = true;
+  if (assistantInput) assistantInput.style.height = '42px';
+
   // Conversation state
   let conversation = [];
   let lastFailedQuestion = null;
@@ -558,9 +564,10 @@ loadGithubRepositories();
       charCounter.textContent = `${len}/350`;
       charCounter.style.color = len > 320 ? '#ff6b6b' : 'var(--muted)';
     }
-    // Auto-adjust height for textarea (max 70px)
+    // Auto-adjust height for textarea (clamps between 42px and 84px)
     assistantInput.style.height = 'auto';
-    assistantInput.style.height = `${Math.min(assistantInput.scrollHeight, 70)}px`;
+    const newHeight = Math.max(42, Math.min(assistantInput.scrollHeight, 84));
+    assistantInput.style.height = `${newHeight}px`;
   });
 
   // Track user scroll position in log
@@ -618,6 +625,9 @@ loadGithubRepositories();
     try { sessionStorage.removeItem(STORAGE_KEY); } catch (_) {}
     conversation = [];
     lastFailedQuestion = null;
+    assistantInput.value = '';
+    assistantInput.style.height = '42px';
+    if (charCounter) charCounter.textContent = '0/350';
     renderWelcomeState();
     toast('Conversation cleared.');
     assistantInput.focus({ preventScroll: true });
@@ -631,6 +641,9 @@ loadGithubRepositories();
   // Open & Close docked panel
   function openAssistant() {
     if (assistantDialog.open) return;
+
+    const launcherWrap = document.querySelector('.assistant-launcher-wrap');
+    if (launcherWrap) launcherWrap.classList.add('is-open');
 
     const isMobile = window.innerWidth <= 640;
     if (isMobile) {
@@ -650,6 +663,10 @@ loadGithubRepositories();
 
   function closeAssistant() {
     if (!assistantDialog.open) return;
+
+    const launcherWrap = document.querySelector('.assistant-launcher-wrap');
+    if (launcherWrap) launcherWrap.classList.remove('is-open');
+
     assistantDialog.close();
     assistantTrigger.setAttribute('aria-expanded', 'false');
     assistantTrigger.focus({ preventScroll: true });
@@ -1200,7 +1217,7 @@ loadGithubRepositories();
 
     // Reset input
     assistantInput.value = '';
-    assistantInput.style.height = 'auto';
+    assistantInput.style.height = '42px';
     if (charCounter) charCounter.textContent = '0/350';
 
     // Append user message
