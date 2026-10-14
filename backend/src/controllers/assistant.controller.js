@@ -10,7 +10,8 @@ const turnSchema = z.object({
     .string()
     .trim()
     .min(1, 'History message cannot be empty.')
-    .max(800, 'History message must not exceed 800 characters.')
+    .max(4000, 'History message must not exceed 4000 characters.')
+    .transform((val) => val.slice(0, 1500))
 });
 
 export const sessionQueryTracker = new Map();
@@ -43,7 +44,7 @@ const assistantQuerySchema = z.object({
     .min(2, 'Question must be at least 2 characters.')
     .max(350, 'Question must not exceed 350 characters.'),
   history: z.array(turnSchema).max(8, 'History cannot exceed 8 messages.').optional().default([]),
-  mode: z.enum(['recruiter', 'technical', 'casual']).optional().default('recruiter'),
+  mode: z.enum(['auto', 'recruiter', 'technical', 'casual']).optional().default('auto'),
   stream: z.boolean().optional().default(true),
   sessionId: z.string().trim().max(80).optional()
 });

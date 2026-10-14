@@ -496,10 +496,10 @@ loadGithubRepositories();
   ]);
 
   const STARTER_ACTIONS = [
-    { label: 'Summarize Ronit in 30 seconds', question: 'Summarize Ronit in 30 seconds' },
-    { label: 'Best project to look at first', question: 'What is the best project to look at first and why?' },
-    { label: 'Is he a fit for a full-stack internship?', question: 'Is Ronit a fit for a full-stack developer internship?' },
-    { label: 'Tech stack overview', question: 'What is Ronit’s core technical stack and skills?' }
+    { label: '🌟 Featured: MetroMind AI', question: 'Tell me about his flagship project MetroMind and its ML architecture' },
+    { label: '🎬 Full-Stack: CinePulse (Postgres)', question: 'What makes CinePulse unique and how does it use PostgreSQL stored procedures?' },
+    { label: '⚡ Summarize Ronit in 30s', question: 'Summarize Ronit in 30 seconds for a recruiter' },
+    { label: '💼 Fit for Full-Stack Internship?', question: 'Is Ronit a fit for a full-stack developer internship?' }
   ];
 
   // Initialize session ID
@@ -514,36 +514,8 @@ loadGithubRepositories();
     sessionId = 'sess_' + Date.now();
   }
 
-  // Initialize mode
-  let currentMode = 'recruiter';
-  try {
-    const savedMode = sessionStorage.getItem(MODE_STORAGE_KEY);
-    if (savedMode && ['recruiter', 'technical', 'casual'].includes(savedMode)) {
-      currentMode = savedMode;
-    }
-  } catch (_) {}
-
-  // Sync mode pill UI
-  function updateModeUI() {
-    modePills.forEach((pill) => {
-      const isActive = pill.dataset.mode === currentMode;
-      pill.classList.toggle('active', isActive);
-      pill.setAttribute('aria-selected', String(isActive));
-    });
-  }
-  updateModeUI();
-
-  modePills.forEach((pill) => {
-    pill.addEventListener('click', () => {
-      const newMode = pill.dataset.mode;
-      if (newMode && newMode !== currentMode) {
-        currentMode = newMode;
-        try { sessionStorage.setItem(MODE_STORAGE_KEY, currentMode); } catch (_) {}
-        updateModeUI();
-        toast(`Mode switched to ${pill.textContent.trim()}`);
-      }
-    });
-  });
+  // Auto-adaptive interaction mode (automatically adjusts tone and depth based on question intent)
+  const currentMode = 'auto';
 
   // Ensure controls are in clean initial state
   if (stopBtn) stopBtn.hidden = true;
@@ -712,7 +684,7 @@ loadGithubRepositories();
 
     const greeting = document.createElement('p');
     greeting.textContent =
-      'Hi! I’m Ronit’s portfolio guide. Ask me about his full-stack work, project architecture, or internship availability.';
+      'Hi! I’m Ronit’s portfolio guide. Ask me about his flagship builds MetroMind and CinePulse, full-stack architecture, or internship availability.';
     card.append(greeting);
 
     const sub = document.createElement('small');

@@ -411,7 +411,8 @@ dialog#assistant-dialog.assistant-docked-panel::backdrop {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
   flex-shrink: 0;
 }
 
@@ -506,47 +507,7 @@ dialog#assistant-dialog .dialog-close .icon {
   width: 15px;
   height: 15px;
 }
-/* Mode switcher tabs */
-.assistant-modes-bar {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 0 6px;
-  border-bottom: 1px solid var(--line);
-  flex-shrink: 0;
-}
 
-.assistant-mode-pill {
-  padding: 4px 10px;
-  font-size: 11px;
-  font-weight: 600;
-  border-radius: 12px;
-  border: 1px solid var(--line);
-  background: var(--surface);
-  color: var(--muted);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  line-height: 1.2;
-}
-
-.assistant-mode-pill:hover {
-  color: var(--text);
-  border-color: var(--accent);
-  background: var(--surface-raised);
-}
-
-.assistant-mode-pill.active {
-  background: var(--surface-raised);
-  border-color: var(--accent);
-  color: var(--accent);
-  font-weight: 700;
-  box-shadow: 0 0 10px rgba(210, 249, 107, 0.15);
-}
-
-[data-theme="light"] .assistant-mode-pill.active {
-  color: #3f6010;
-  border-color: #4b6a18;
-}
 
 /* Chat thread */
 .assistant-log {
