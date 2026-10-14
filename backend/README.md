@@ -8,6 +8,7 @@ Node.js + Express + MongoDB Atlas. Three endpoints, no ceremony.
 | GET    | `/api/health`       | Liveness + DB status; also the wake-up ping         |
 | POST   | `/api/contact`      | Validate → store message → email notification       |
 | GET    | `/api/github/repos` | Cached public repo list (stars, language, activity) |
+| POST   | `/api/assistant`    | Multi-turn portfolio guide assistant (Groq Cloud)   |
 
 ## Why only three endpoints
 
@@ -58,6 +59,30 @@ curl "http://localhost:5000/api/github/repos?limit=3"
 
 The contact route allows 5 submissions per IP per hour, so the sixth curl in an
 hour returns 429 — that is the limiter working, not a bug.
+
+```bash
+# Test the AI Assistant endpoint:
+curl -X POST http://localhost:5000/api/assistant \
+  -H "Content-Type: application/json" \
+  -d '{"question":"Tell me about MetroMind","history":[]}'
+```
+
+## Running Tests
+
+Tests use Node's native test runner (`node:test`) and mock all external AI API calls (no live API keys required):
+
+```bash
+npm test
+```
+
+## AI Assistant Architecture
+
+The assistant (`POST /api/assistant`) acts as Ronit's portfolio guide:
+- **Grounded facts**: Pulls from `backend/src/services/assistantKnowledge.js`, verified against actual repositories, résumé, and portfolio data.
+- **Strict safety allowlist**: Only allowlisted URLs and action targets are ever returned to the client. Model-hallucinated links or arbitrary domains are never served or rendered as active links.
+- **Bounded multi-turn**: Accepts `{ question, history }` validated server-side by Zod, retaining up to the last 6-8 relevant turns to save tokens and maintain rapid response times.
+- **Configurable models & fallback**: Uses `GROQ_MODEL` (default: `llama-3.3-70b-versatile`) with automatic fast fallback to `GROQ_FALLBACK_MODEL` (`llama-3.1-8b-instant`) under a single 11-second controller budget.
+- **Serverless rate limiting notice**: The in-memory rate limiter protects warm Node instances. In multi-region serverless deployments (such as Vercel Functions), memory is ephemeral per container instance; for globally unified rate limiting across serverless lambdas, an external store such as Upstash Redis should be configured.
 
 ## Frontend wiring
 
