@@ -27,6 +27,12 @@
 
 - **Dynamic GitHub API Showcase**: Automatically fetches and ranks public repositories with server-side caching (10 min TTL) and token-authenticated requests (5,000 req/hr).
 - **Interactive 3D Canvas Sculpture**: Custom mathematical canvas geometry responding to cursor movements and device tilt, capped at 30 FPS with tab-visibility battery saving.
+- **"Ask about Ronit" Portfolio Guide**:
+  - Non-blocking docked bottom-right panel on desktop (browsable while chatting) and responsive mobile bottom sheet.
+  - Factual grounding in curated project code and résumé facts (no fabricated metrics or unconfirmed claims).
+  - Multi-turn conversation awareness with server-side history validation and strict resource allowlists.
+  - Verified action chips ("Live project", "GitHub source", "Download Résumé", "Contact Ronit"), follow-up suggestions, one-click copy, and quick retry on failure.
+  - Powered by Groq Cloud with configurable model fallback (`llama-3.3-70b-versatile` & `llama-3.1-8b-instant`) under a strict 11-second budget.
 - **Enterprise-Grade Contact System**:
   - **MongoDB Atlas** persistence for contact submissions.
   - **Resend** transactional email dispatch directly to the recruiter's inbox.
