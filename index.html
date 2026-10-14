@@ -224,7 +224,7 @@
           <h2 id="assistant-title">Ask about Ronit</h2>
         </div>
         <div class="assistant-header-actions">
-          <button type="button" class="assistant-header-btn" id="assistant-clear-btn" aria-label="Clear chat" title="Clear conversation">
+          <button type="button" class="assistant-header-btn" id="assistant-clear-btn" aria-label="Clear chat" title="Clear conversation / New chat">
             <svg class="icon"><use href="#trash"/></svg>
           </button>
           <button type="button" class="assistant-header-btn dialog-close" id="assistant-close-btn" aria-label="Close assistant" title="Close panel">
@@ -233,17 +233,40 @@
         </div>
       </div>
 
+      <!-- Quick Mode Selector -->
+      <div class="assistant-modes-bar" role="tablist" aria-label="Response tone mode">
+        <button type="button" class="assistant-mode-pill active" data-mode="recruiter" role="tab" aria-selected="true" title="Short & impact-focused">
+          Recruiter
+        </button>
+        <button type="button" class="assistant-mode-pill" data-mode="technical" role="tab" aria-selected="false" title="Stack, architecture, and tradeoffs">
+          Technical
+        </button>
+        <button type="button" class="assistant-mode-pill" data-mode="casual" role="tab" aria-selected="false" title="Warm and conversational">
+          Casual
+        </button>
+      </div>
+
       <div id="assistant-log" class="assistant-log" role="log" aria-live="polite">
         <!-- Message stream rendered dynamically by script.js -->
       </div>
 
+      <!-- Floating Jump to Latest Button -->
+      <button type="button" id="assistant-jump-btn" class="assistant-jump-pill" aria-label="Jump to latest message" hidden>
+        <span>↓ Jump to latest</span>
+      </button>
+
       <form id="assistant-form" class="assistant-form">
         <div class="assistant-input-wrap">
-          <input id="assistant-input" type="text" maxlength="350" required
+          <textarea id="assistant-input" rows="1" maxlength="350" required
             placeholder="Ask about projects, stack, availability…" 
-            autocomplete="off" aria-label="Ask a question about Ronit" />
+            autocomplete="off" aria-label="Ask a question about Ronit"></textarea>
+          <span id="assistant-char-count" class="assistant-char-counter" aria-live="polite">0/350</span>
         </div>
-        <button type="submit" class="assistant-send-btn" aria-label="Send question" title="Send question">
+        <button type="button" id="assistant-stop-btn" class="assistant-stop-btn" aria-label="Stop generating" title="Stop generating" hidden>
+          <svg class="icon"><use href="#square"/></svg>
+          <span>Stop</span>
+        </button>
+        <button type="submit" id="assistant-send-btn" class="assistant-send-btn" aria-label="Send question" title="Send question">
           <svg class="icon"><use href="#arrow-up-right"/></svg>
         </button>
       </form>
