@@ -29,15 +29,27 @@ export const contactLimiter = rateLimit({
 });
 
 /**
- * Assistant AI chat: 15 questions per IP per hour.
+ * Assistant AI chat: 20 questions per IP per hour.
  * Protects against bot scrapers exhausting Groq organization API caps.
+ *
+ * NOTE ON SERVERLESS (e.g. Vercel Functions):
+ * In-memory rate limiting operates per warm serverless container instance.
+ * Because serverless environments spin up ephemeral instances on demand,
+ * an in-memory store cannot guarantee global rate limits across different instances.
+ * For globally synchronized limits across multi-region serverless invocations,
+ * a distributed external store (such as Upstash Redis or Memcached) should be attached.
+ * For single-instance servers (e.g. Render / VPS), this in-memory limiter is strictly enforced.
  */
 export const assistantLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
-  limit: 15,
+  limit: 20,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   skipSuccessfulRequests: false,
-  message: json('You have asked several questions already. Please try again in an hour, or email ronitparmar.work@gmail.com directly.')
+  message: {
+    success: false,
+    code: 'RATE_LIMIT',
+    message: 'You have asked several questions already. Please try again in a bit, or email ronitparmar.work@gmail.com directly.'
+  }
 });
 

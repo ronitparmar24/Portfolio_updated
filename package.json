@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "npm --prefix backend run dev",
-    "start": "npm --prefix backend start"
+    "start": "npm --prefix backend start",
+    "test": "npm --prefix backend test"
   },
   "dependencies": {
     "compression": "^1.7.5",

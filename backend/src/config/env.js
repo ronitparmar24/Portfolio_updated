@@ -45,6 +45,8 @@ const envSchema = z.object({
   TURNSTILE_SECRET_KEY: z.string().optional(),
 
   GROQ_API_KEY: z.string().min(1, 'GROQ_API_KEY is required').optional(),
+  GROQ_MODEL: z.string().default('llama-3.3-70b-versatile'),
+  GROQ_FALLBACK_MODEL: z.string().default('llama-3.1-8b-instant'),
 
   IP_HASH_SALT: z.string().min(8).default('portfolio-salt-ronit-secure-default')
 });
