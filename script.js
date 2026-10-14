@@ -980,6 +980,22 @@ loadGithubRepositories();
     return card;
   }
 
+  // Render clickable follow-up suggestion chips
+  function renderSuggestionChips(container, suggestions) {
+    container.replaceChildren();
+    if (!Array.isArray(suggestions)) return;
+    suggestions.forEach((sugText) => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'assistant-chip';
+      chip.textContent = sugText;
+      chip.addEventListener('click', () => {
+        submitQuestion(sugText);
+      });
+      container.append(chip);
+    });
+  }
+
   // Render full conversation
   function renderConversation() {
     assistantLog.replaceChildren();
@@ -1135,30 +1151,65 @@ loadGithubRepositories();
           }
         }
 
-        // Suggestions on the last bot response
+        // Dynamic suggestions on the last bot response
         if (idx === conversation.length - 1 && Array.isArray(turn.suggestions) && turn.suggestions.length > 0) {
           const sugWrap = document.createElement('div');
           sugWrap.className = 'assistant-suggestions';
 
+          const sugHeader = document.createElement('div');
+          sugHeader.className = 'assistant-suggestions-header';
+
           const sugLabel = document.createElement('span');
           sugLabel.className = 'assistant-suggestions-label';
           sugLabel.textContent = 'Suggested follow-ups:';
-          sugWrap.append(sugLabel);
+          sugHeader.append(sugLabel);
 
           const sugList = document.createElement('div');
-          sugList.className = 'assistant-suggestion-chips';
+          sugList.className = 'assistant-suggestion-chips assistant-chips-animate';
 
-          turn.suggestions.forEach((sugText) => {
-            const chip = document.createElement('button');
-            chip.type = 'button';
-            chip.className = 'assistant-chip';
-            chip.textContent = sugText;
-            chip.addEventListener('click', () => {
-              submitQuestion(sugText);
+          // Candidate pool for dynamic client-side rotation
+          const pool = Array.isArray(turn.dynamicPool) && turn.dynamicPool.length > 3
+            ? turn.dynamicPool
+            : (turn.suggestions.length > 3 ? turn.suggestions : null);
+
+          if (pool && pool.length > 3) {
+            let poolOffset = 0;
+            const shuffleBtn = document.createElement('button');
+            shuffleBtn.type = 'button';
+            shuffleBtn.className = 'assistant-suggestions-shuffle';
+            shuffleBtn.title = 'Shuffle suggested questions';
+            shuffleBtn.setAttribute('aria-label', 'Shuffle suggested questions');
+            shuffleBtn.innerHTML = `
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="16 3 21 3 21 8"></polyline>
+                <line x1="4" y1="20" x2="21" y2="3"></line>
+                <polyline points="21 16 21 21 16 21"></polyline>
+                <line x1="15" y1="15" x2="21" y2="21"></line>
+                <line x1="4" y1="4" x2="9" y2="9"></line>
+              </svg>
+              <span>Shuffle</span>
+            `;
+
+            shuffleBtn.addEventListener('click', (e) => {
+              e.stopPropagation();
+              poolOffset = (poolOffset + 3) % pool.length;
+              const nextBatch = [
+                ...pool.slice(poolOffset, poolOffset + 3),
+                ...pool.slice(0, Math.max(0, (poolOffset + 3) - pool.length))
+              ].slice(0, 3);
+
+              turn.suggestions = nextBatch;
+              renderSuggestionChips(sugList, nextBatch);
+              sugList.classList.remove('assistant-chips-animate');
+              void sugList.offsetWidth; // force reflow for CSS animation
+              sugList.classList.add('assistant-chips-animate');
             });
-            sugList.append(chip);
-          });
 
+            sugHeader.append(shuffleBtn);
+          }
+
+          sugWrap.append(sugHeader);
+          renderSuggestionChips(sugList, turn.suggestions);
           sugWrap.append(sugList);
           bubble.append(sugWrap);
         }
