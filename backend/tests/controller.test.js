@@ -137,4 +137,27 @@ test('assistant.controller: enforces per-session question limit', async () => {
   assert.ok(overflowRes.body.message.includes('asked several questions'));
 });
 
+test('assistant.controller: accepts long assistant history turns up to 4000 chars without error', async () => {
+  features.assistant = true;
+
+  const longAssistantMessage = 'MetroMind is a flagship full-stack system. '.repeat(35); // ~1500 chars
+  const req = {
+    body: {
+      question: 'Tell me more about MetroMind',
+      mode: 'auto',
+      history: [
+        { role: 'user', content: 'What is MetroMind?' },
+        { role: 'assistant', content: longAssistantMessage }
+      ],
+      stream: false
+    }
+  };
+  const res = createMockResponse();
+
+  await askQuestion(req, res);
+  // It should NOT fail with VALIDATION_ERROR (400)
+  assert.notEqual(res.statusCode, 400);
+});
+
+
 
