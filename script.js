@@ -1212,7 +1212,7 @@ loadGithubRepositories();
     const historyPayload = conversation
       .slice(0, -1)
       .slice(-MAX_HISTORY_TURNS)
-      .map((t) => ({ role: t.role, content: t.content }));
+      .map((t) => ({ role: t.role, content: (t.content || '').slice(0, 1200) }));
 
     currentAbortController = new AbortController();
 
