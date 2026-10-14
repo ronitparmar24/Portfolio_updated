@@ -916,10 +916,17 @@ dialog#assistant-dialog .dialog-close .icon {
 .assistant-suggestions {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-top: 6px;
-  padding-top: 8px;
+  gap: 7px;
+  margin-top: 8px;
+  padding-top: 9px;
   border-top: 1px dashed var(--line);
+}
+
+.assistant-suggestions-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .assistant-suggestions-label {
@@ -930,10 +937,72 @@ dialog#assistant-dialog .dialog-close .icon {
   text-transform: uppercase;
 }
 
+.assistant-suggestions-shuffle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 3px 7px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all var(--speed) var(--ease);
+}
+
+.assistant-suggestions-shuffle:hover {
+  color: var(--accent);
+  background: var(--surface);
+  border-color: var(--line);
+  transform: translateY(-1px);
+}
+
+.assistant-suggestions-shuffle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.assistant-suggestions-shuffle svg {
+  width: 10px;
+  height: 10px;
+  stroke: currentColor;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.assistant-suggestions-shuffle:active svg {
+  transform: rotate(180deg);
+}
+
 .assistant-suggestion-chips {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+}
+
+@keyframes chipFadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.assistant-chips-animate .assistant-chip {
+  animation: chipFadeSlideIn 0.24s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.assistant-chips-animate .assistant-chip:nth-child(2) {
+  animation-delay: 0.04s;
+}
+
+.assistant-chips-animate .assistant-chip:nth-child(3) {
+  animation-delay: 0.08s;
 }
 
 /* Typing / Loading state */
