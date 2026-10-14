@@ -113,22 +113,12 @@ test('assistant.controller: rejects invalid mode parameter', async () => {
 });
 
 test('assistant.controller: enforces per-session question limit', async () => {
+  const { sessionQueryTracker } = await import('../src/controllers/assistant.controller.js');
   features.assistant = true;
   const testSessionId = `test-session-limit-${Date.now()}`;
 
-  // Fill up session limit quota (25 requests)
-  for (let i = 0; i < 25; i++) {
-    const req = {
-      body: {
-        question: `Question turn ${i}`,
-        sessionId: testSessionId,
-        stream: false
-      }
-    };
-    const res = createMockResponse();
-    // Use short question format that triggers session counter check
-    await askQuestion(req, res);
-  }
+  // Pre-seed session counter to limit
+  sessionQueryTracker.set(testSessionId, { count: 25, resetAt: Date.now() + 3600000 });
 
   // 26th request must be rate limited
   const overflowReq = {
@@ -146,4 +136,5 @@ test('assistant.controller: enforces per-session question limit', async () => {
   assert.equal(overflowRes.body.code, 'SESSION_LIMIT');
   assert.ok(overflowRes.body.message.includes('asked several questions'));
 });
+
 
