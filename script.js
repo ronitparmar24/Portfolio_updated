@@ -1270,6 +1270,7 @@ loadGithubRepositories();
     let accumulatedText = '';
     let responseActions = [];
     let responseSuggestions = [];
+    let responseDynamicPool = [];
     let botBubble = null;
     let botBody = null;
     let caretSpan = null;
@@ -1367,6 +1368,7 @@ loadGithubRepositories();
                 const meta = JSON.parse(dataStr);
                 if (Array.isArray(meta.actions)) responseActions = meta.actions;
                 if (Array.isArray(meta.suggestions)) responseSuggestions = meta.suggestions;
+                if (Array.isArray(meta.dynamicPool)) responseDynamicPool = meta.dynamicPool;
               } catch (_) {}
             } else if (eventType === 'error' && dataStr) {
               try {
@@ -1385,6 +1387,7 @@ loadGithubRepositories();
         accumulatedText = data.answer || '';
         responseActions = Array.isArray(data.actions) ? data.actions : [];
         responseSuggestions = Array.isArray(data.suggestions) ? data.suggestions : [];
+        responseDynamicPool = Array.isArray(data.dynamicPool) ? data.dynamicPool : [];
       }
 
       // Finalize completed response
@@ -1398,6 +1401,7 @@ loadGithubRepositories();
           content: accumulatedText,
           actions: responseActions,
           suggestions: responseSuggestions,
+          dynamicPool: responseDynamicPool,
           timestamp: timeNow
         });
 
@@ -1417,6 +1421,7 @@ loadGithubRepositories();
             content: accumulatedText,
             actions: responseActions,
             suggestions: responseSuggestions,
+            dynamicPool: responseDynamicPool,
             timestamp: timeNow
           });
           saveSession();

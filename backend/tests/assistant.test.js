@@ -4,6 +4,7 @@ import {
   buildRelevantKnowledge,
   determineActions,
   determineSuggestions,
+  determineSuggestionPool,
   VERIFIED_ACTIONS,
   ALLOWED_URL_SET,
   PROFILE,
@@ -117,6 +118,20 @@ test('assistantKnowledge: determineSuggestions dynamically adapts across turns a
   assert.ok(turn2Suggestions.length >= 2);
   // Suggestions should have dynamically shifted
   assert.notDeepEqual(turn1Suggestions, turn2Suggestions);
+});
+
+test('assistantKnowledge: determineSuggestions changes dynamically over time via dynamic entropy', () => {
+  const pool = determineSuggestionPool('Tell me about his work', 'Ronit built MetroMind and CinePulse');
+  assert.ok(Array.isArray(pool));
+  assert.ok(pool.length >= 4);
+
+  // Calling with different time seeds simulates queries at different times
+  const timeA = determineSuggestions('Tell me about his work', 'Ronit built MetroMind and CinePulse', [], { timeSeed: 0 });
+  const timeB = determineSuggestions('Tell me about his work', 'Ronit built MetroMind and CinePulse', [], { timeSeed: 5 });
+
+  assert.ok(timeA.length >= 2 && timeA.length <= 3);
+  assert.ok(timeB.length >= 2 && timeB.length <= 3);
+  assert.notDeepEqual(timeA, timeB);
 });
 
 test('askAssistant: handles successful Groq response with verified actions and suggestions', async () => {
