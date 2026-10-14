@@ -276,12 +276,21 @@
 /* --- "Ask about Ronit" Dedicated Floating Portfolio Guide & Docked Panel --- */
 .assistant-launcher-wrap {
   position: fixed;
-  bottom: 28px;
-  right: 28px;
+  bottom: 24px;
+  right: 24px;
   z-index: 45;
   display: flex;
   align-items: center;
   pointer-events: none;
+  transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.25s;
+}
+
+body:has(#assistant-dialog[open]) .assistant-launcher-wrap,
+.assistant-launcher-wrap.is-open {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  transform: scale(0.85) translateY(12px) !important;
 }
 
 .assistant-fab {
@@ -348,11 +357,11 @@
 /* Docked bottom-right panel on desktop */
 dialog#assistant-dialog.assistant-docked-panel {
   position: fixed;
-  inset: auto 28px 90px auto;
+  inset: auto 24px 24px auto;
   margin: 0;
   width: 420px;
   height: 600px;
-  max-height: calc(100vh - 110px);
+  max-height: calc(100vh - 48px);
   padding: 0;
   border: 1px solid var(--line);
   border-radius: 20px;
@@ -393,16 +402,16 @@ dialog#assistant-dialog.assistant-docked-panel::backdrop {
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: 16px 18px 12px;
+  padding: 16px 18px 14px;
   overflow: hidden;
+  position: relative;
 }
 
 .assistant-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--line);
+  padding-bottom: 8px;
   flex-shrink: 0;
 }
 
