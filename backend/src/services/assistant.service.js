@@ -19,6 +19,35 @@ export const CANDIDATE_MODELS = [
   'llama-3.1-8b-instant'
 ].filter(Boolean);
 
+// In-memory query response cache for common standalone questions
+const responseCache = new Map();
+const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+const MAX_CACHE_ENTRIES = 50;
+
+export function clearAssistantCache() {
+  responseCache.clear();
+}
+
+export function detectQuestionCategory(question = '') {
+  const q = question.toLowerCase();
+  if (q.includes('fit') || q.includes('hire') || q.includes('job') || q.includes('intern') || q.includes('availab')) {
+    return 'career-and-fit';
+  }
+  if (q.includes('metro') || q.includes('cine') || q.includes('digi') || q.includes('brts') || q.includes('flappy') || q.includes('project')) {
+    return 'projects';
+  }
+  if (q.includes('skill') || q.includes('tech') || q.includes('stack') || q.includes('database') || q.includes('backend') || q.includes('frontend')) {
+    return 'technical-stack';
+  }
+  if (q.includes('education') || q.includes('college') || q.includes('university') || q.includes('degree') || q.includes('cgpa')) {
+    return 'education';
+  }
+  if (q.includes('contact') || q.includes('email') || q.includes('phone') || q.includes('linkedin') || q.includes('reach')) {
+    return 'contact';
+  }
+  return 'general';
+}
+
 /**
  * Sanitize and bound history (last 6 turns = 3 user/assistant pairs)
  */
@@ -84,7 +113,27 @@ export async function askAssistantStream({
     throw error;
   }
 
+  const startTime = Date.now();
+  const category = detectQuestionCategory(question);
   const safeHistory = sanitizeHistory(history);
+
+  // Serve identical common questions from cache when there is no conversational history
+  const cacheKey = `${mode.toLowerCase()}::${question.trim().toLowerCase()}`;
+  if (safeHistory.length === 0 && responseCache.has(cacheKey)) {
+    const entry = responseCache.get(cacheKey);
+    if (Date.now() - entry.cachedAt < CACHE_TTL_MS) {
+      onToken(entry.answer);
+      const latencyMs = Date.now() - startTime;
+      console.log(`[assistant-telemetry] category=${category} mode=${mode} latency=${latencyMs}ms cached=true`);
+      return {
+        answer: entry.answer,
+        actions: entry.actions,
+        suggestions: entry.suggestions
+      };
+    }
+    responseCache.delete(cacheKey);
+  }
+
   const messages = await assembleMessages(question, safeHistory, { mode });
 
   const candidateModels = Array.from(new Set(CANDIDATE_MODELS));
@@ -101,6 +150,7 @@ export async function askAssistantStream({
 
   let lastError = null;
   let accumulatedAnswer = '';
+
 
   try {
     for (let i = 0; i < candidateModels.length; i++) {
@@ -218,11 +268,25 @@ export async function askAssistantStream({
           const verifiedActions = rawActions.filter((act) => act && ALLOWED_URL_SET.has(act.url));
           const suggestions = determineSuggestions(question, finalAnswer, safeHistory);
 
-          return {
+          const result = {
             answer: finalAnswer,
             actions: verifiedActions,
             suggestions
           };
+
+          // Cache standalone questions to minimize costs and latency
+          if (safeHistory.length === 0) {
+            if (responseCache.size >= MAX_CACHE_ENTRIES) {
+              const oldestKey = responseCache.keys().next().value;
+              responseCache.delete(oldestKey);
+            }
+            responseCache.set(cacheKey, { ...result, cachedAt: Date.now() });
+          }
+
+          const latencyMs = Date.now() - startTime;
+          console.log(`[assistant-telemetry] category=${category} mode=${mode} latency=${latencyMs}ms cached=false`);
+
+          return result;
         }
       } catch (err) {
         clearTimeout(modelTimerId);
