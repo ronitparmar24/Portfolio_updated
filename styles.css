@@ -1250,6 +1250,21 @@ dialog#assistant-dialog .dialog-note {
   }
 }
 
+@media (max-width: 400px) {
+  .assistant-mode-pill {
+    padding: 3px 8px;
+    font-size: 10.5px;
+  }
+  .assistant-welcome-card p {
+    font-size: 12.5px;
+  }
+  .assistant-chip {
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+}
+
+
 /* Motion system respect */
 .motion-paused .assistant-fab,
 .motion-paused .assistant-fab:hover,
