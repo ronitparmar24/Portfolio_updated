@@ -13,11 +13,12 @@ const turnSchema = z.object({
     .max(800, 'History message must not exceed 800 characters.')
 });
 
-const sessionQueryTracker = new Map();
-const SESSION_WINDOW_MS = 60 * 60 * 1000;
-const SESSION_MAX_QUESTIONS = 25;
+export const sessionQueryTracker = new Map();
+export const SESSION_WINDOW_MS = 60 * 60 * 1000;
+export const SESSION_MAX_QUESTIONS = 25;
 
-function checkSessionLimit(sessionId) {
+export function checkSessionLimit(sessionId) {
+
   if (!sessionId) return true;
   const now = Date.now();
   const record = sessionQueryTracker.get(sessionId) || { count: 0, resetAt: now + SESSION_WINDOW_MS };
@@ -84,9 +85,12 @@ export async function askQuestion(req, res) {
 
   // Client abort handling
   const clientController = new AbortController();
-  req.on('close', () => {
-    clientController.abort();
-  });
+  if (typeof req?.on === 'function') {
+    req.on('close', () => {
+      clientController.abort();
+    });
+  }
+
 
   if (!isStreamingRequested) {
     // Non-streaming JSON mode (used by unit tests or non-streaming clients)
