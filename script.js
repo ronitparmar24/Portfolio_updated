@@ -1052,6 +1052,14 @@ loadGithubRepositories();
       chip.className = 'assistant-chip';
       chip.textContent = sugText;
       chip.addEventListener('click', () => {
+        const textLower = (sugText || '').toLowerCase();
+        // If the user clicked an explicit download résumé suggestion, trigger download immediately
+        if (
+          textLower.includes('download') &&
+          (textLower.includes('resume') || textLower.includes('résumé'))
+        ) {
+          executeAction({ type: 'downloadResume' });
+        }
         submitQuestion(sugText);
       });
       container.append(chip);

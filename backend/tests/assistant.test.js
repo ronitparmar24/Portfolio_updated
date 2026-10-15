@@ -85,6 +85,21 @@ test('assistantKnowledge: determineActions selects verified links relevant to qu
     followUpUrls.includes('https://github.com/ronitparmar24/Cinepulse') ||
     followUpUrls.includes('https://cinepulse-kohl.vercel.app/')
   );
+
+  // Test resume request: should prioritize resume-download and NOT inject stale project actions from history
+  const resumeActions = determineActions(
+    'Download Ronit’s official résumé (PDF)',
+    'You can download Ronit’s official résumé below.',
+    [{ role: 'user', content: 'Tell me about MetroMind' }, { role: 'assistant', content: 'MetroMind is a transit platform.' }]
+  );
+  assert.equal(resumeActions[0].id, 'resume-download');
+  assert.ok(!resumeActions.some((a) => a.id === 'metromind-live'));
+});
+
+test('assistantKnowledge: retrieves verified resume knowledge when asked for resume', () => {
+  const knowledge = buildRelevantKnowledge('Download Ronit’s official résumé (PDF)');
+  assert.ok(knowledge.includes('RONIT PARMAR OFFICIAL RÉSUMÉ'));
+  assert.ok(knowledge.includes('Ronit_Parmar_Resume.pdf'));
 });
 
 test('assistantKnowledge: determineSuggestions yields 2-3 focused follow-up prompts', () => {
