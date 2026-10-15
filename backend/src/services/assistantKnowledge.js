@@ -494,17 +494,16 @@ export function determineActions(question = '', answer = '', history = []) {
     }
   }
 
-  // 1. Résumé / CV / Hire Intent (prioritize when user asks for resume)
+  // 1. Résumé / CV Intent: return resume download and contact actions ONLY (never show unrelated project cards)
   const isResumeQuery =
     q.includes('resume') ||
     q.includes('résumé') ||
-    q.includes('cv') ||
-    a.includes('resume') ||
-    a.includes('résumé') ||
-    a.includes('cv');
+    q.includes('cv');
 
   if (isResumeQuery) {
     addAction('resume-download');
+    addAction('contact-section');
+    return actions;
   }
 
   // 2. Direct MetroMind intent
@@ -580,11 +579,6 @@ export function determineActions(question = '', answer = '', history = []) {
     addAction('github-all');
   }
 
-  // If user asked for resume and we haven't added contact, add contact as second chip
-  if (isResumeQuery && !addedIds.has('contact-section')) {
-    addAction('contact-section');
-  }
-
   return actions.slice(0, 3);
 }
 
@@ -619,8 +613,20 @@ export function determineSuggestionPool(question = '', answer = '', history = []
     candidatePool.push({ text, weight, category });
   };
 
+  const isResume = q.includes('resume') || q.includes('résumé') || q.includes('cv');
+
+  // Résumé follow-up priority: offer recruiter-relevant next steps
+  if (isResume) {
+    addCandidate('💼 Is Ronit open to full-stack developer internships?', 14, 'recruiter', 'internship');
+    addCandidate('What is Ronit’s weekly availability and preferred start date?', 13, 'recruiter', 'availability');
+    addCandidate('How can a recruiter schedule an interview with Ronit?', 12, 'recruiter', 'interview');
+    addCandidate('🌟 Tell me about his flagship project MetroMind', 11, 'flagship', 'metromind');
+    addCandidate('🎬 Tell me about CinePulse (PostgreSQL)', 10, 'flagship', 'cinepulse');
+    addCandidate('What are his core technical strengths across frontend and backend?', 9, 'tech', 'core technical strengths');
+  }
+
   // Flagship 1: MetroMind deep-dives (AI Transit & Fare Automation)
-  if (a.includes('metromind') || q.includes('metromind') || a.includes('crowd') || a.includes('transit') || a.includes('metro') || a.includes('fare')) {
+  if (!isResume && (a.includes('metromind') || q.includes('metromind') || a.includes('crowd') || a.includes('transit') || a.includes('metro') || a.includes('fare'))) {
     if (!hasAsked('ml model') && !hasAsked('crowd prediction') && !hasAsked('scikit')) {
       addCandidate('What ML model powers MetroMind’s crowd forecasting?', 12, 'flagship-deep', 'ml model');
     }
@@ -636,7 +642,7 @@ export function determineSuggestionPool(question = '', answer = '', history = []
   }
 
   // Flagship 2: CinePulse deep-dives (PostgreSQL Relational & TMDB)
-  if (a.includes('cinepulse') || q.includes('cinepulse') || a.includes('movie') || a.includes('postgres') || a.includes('tmdb') || a.includes('stored procedure')) {
+  if (!isResume && (a.includes('cinepulse') || q.includes('cinepulse') || a.includes('movie') || a.includes('postgres') || a.includes('tmdb') || a.includes('stored procedure'))) {
     if (!hasAsked('stored procedure') && !hasAsked('pl/pgsql') && !hasAsked('plpgsql')) {
       addCandidate('How does CinePulse use PL/pgSQL stored procedures?', 12, 'flagship-deep', 'stored procedure');
     }
