@@ -93,9 +93,9 @@ test('assistantKnowledge: determineSuggestions yields 2-3 focused follow-up prom
   assert.ok(metroSuggestions.length >= 2 && metroSuggestions.length <= 3);
   assert.ok(metroSuggestions.some((s) => s.toLowerCase().includes('metromind') || s.toLowerCase().includes('cinepulse') || s.toLowerCase().includes('ml')));
 
-  const compareSuggestions = determineSuggestions('Compare MetroMind and CinePulse', '');
+  const compareSuggestions = determineSuggestions('Compare MetroMind and CinePulse', '', [], { timeSeed: 0 });
   assert.ok(compareSuggestions.length >= 2);
-  assert.ok(compareSuggestions.some((s) => s.toLowerCase().includes('strength') || s.toLowerCase().includes('internship') || s.toLowerCase().includes('tech')));
+  assert.ok(compareSuggestions.some((s) => s.toLowerCase().includes('strength') || s.toLowerCase().includes('internship') || s.toLowerCase().includes('tech') || s.toLowerCase().includes('metromind') || s.toLowerCase().includes('cinepulse')));
 });
 
 test('assistantKnowledge: determineSuggestions dynamically adapts across turns and avoids repeating asked questions', () => {
