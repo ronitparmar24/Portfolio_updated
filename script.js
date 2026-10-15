@@ -889,6 +889,18 @@ loadGithubRepositories();
   function executeAction(act) {
     if (!act) return;
 
+    // Direct live or external URL launch (e.g. Launch CinePulse, Launch MetroMind)
+    if (
+      act.type === 'live' ||
+      act.actionType === 'live' ||
+      (act.url && (act.id?.endsWith('-live') || /launch/i.test(act.label || '')))
+    ) {
+      if (act.url && ALLOWED_URLS.has(act.url)) {
+        window.open(act.url, '_blank', 'noopener,noreferrer');
+        return;
+      }
+    }
+
     // Scroll to section
     if (act.type === 'scroll' || act.actionType === 'scroll') {
       const targetSelector = act.target || act.url;
@@ -904,12 +916,20 @@ loadGithubRepositories();
 
     // Open project modal dialog
     if (act.type === 'openProject' || act.actionType === 'openProject') {
-      const projectId = act.id || act.project?.id;
-      if (typeof openProject === 'function' && projectId) {
+      const rawId = act.project?.id || act.id || '';
+      const cleanId = rawId.replace(/-(?:live|github|breakdown|modal)$/, '');
+      const targetId = projects[cleanId] ? cleanId : (projects[rawId] ? rawId : null);
+
+      if (targetId && typeof openProject === 'function') {
         if (checkIsMobile() && assistantDialog.open) {
           closeAssistant();
         }
-        openProject(projectId, assistantTrigger);
+        openProject(targetId, assistantTrigger);
+        return;
+      } else if (act.url && ALLOWED_URLS.has(act.url)) {
+        // Fallback: if project modal not found but url exists, open it in a new tab
+        window.open(act.url, '_blank', 'noopener,noreferrer');
+        return;
       }
       return;
     }
@@ -942,6 +962,11 @@ loadGithubRepositories();
       a.remove();
       toast('Downloading Ronit’s résumé…');
       return;
+    }
+
+    // Generic fallback for any verified URL
+    if (act.url && ALLOWED_URLS.has(act.url)) {
+      window.open(act.url, '_blank', 'noopener,noreferrer');
     }
   }
 
@@ -1149,7 +1174,18 @@ loadGithubRepositories();
 
           turn.actions.forEach((act) => {
             if (act && act.url && ALLOWED_URLS.has(act.url)) {
-              if (act.actionType === 'openProject' || act.actionType === 'openContact' || act.actionType === 'downloadResume') {
+              const isExternalLiveOrGh =
+                act.type === 'live' ||
+                act.type === 'github' ||
+                act.type === 'email' ||
+                (act.id && (act.id.endsWith('-live') || act.id.endsWith('-github'))) ||
+                (act.label && /launch/i.test(act.label));
+
+              const isModalAction = (act.actionType === 'openProject' || act.type === 'openProject') && !isExternalLiveOrGh;
+              const isContactAction = act.actionType === 'openContact' || act.type === 'openContact';
+              const isDownloadAction = act.actionType === 'downloadResume' || act.type === 'downloadResume';
+
+              if (isModalAction || isContactAction || isDownloadAction) {
                 const actionButton = document.createElement('button');
                 actionButton.type = 'button';
                 actionButton.className = 'assistant-action-chip';

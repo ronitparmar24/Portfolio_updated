@@ -94,7 +94,6 @@ export const VERIFIED_ACTIONS = {
     label: 'Launch MetroMind ↗',
     url: 'https://metro-mind-lemon.vercel.app/',
     type: 'live',
-    actionType: 'openProject',
     project: {
       id: 'metromind',
       name: 'MetroMind',
@@ -115,7 +114,6 @@ export const VERIFIED_ACTIONS = {
     label: 'Launch CinePulse ↗',
     url: 'https://cinepulse-kohl.vercel.app/',
     type: 'live',
-    actionType: 'openProject',
     project: {
       id: 'cinepulse',
       name: 'CinePulse',
@@ -136,7 +134,6 @@ export const VERIFIED_ACTIONS = {
     label: 'DigiKhata GitHub ↗',
     url: 'https://github.com/ronitparmar24/digiKhata',
     type: 'github',
-    actionType: 'openProject',
     project: {
       id: 'digikhata',
       name: 'DigiKhata',
