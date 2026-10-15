@@ -539,7 +539,18 @@ export function determineActions(question = '', answer = '', history = []) {
     q.includes('showcase')
   ) {
     addAction('metromind-live');
+    addAction('metromind-github');
     addAction('cinepulse-live');
+    addAction('cinepulse-github');
+  }
+
+  // Symmetrical Flagship GitHub pairing:
+  // If CinePulse is present, always include CinePulse GitHub (just like MetroMind has MetroMind GitHub)
+  if (addedIds.has('cinepulse-live') && !addedIds.has('cinepulse-github')) {
+    addAction('cinepulse-github');
+  }
+  if (addedIds.has('metromind-live') && !addedIds.has('metromind-github')) {
+    addAction('metromind-github');
   }
 
   // 5. DigiKhata
@@ -579,7 +590,7 @@ export function determineActions(question = '', answer = '', history = []) {
     addAction('github-all');
   }
 
-  return actions.slice(0, 3);
+  return actions.slice(0, 4);
 }
 
 /**
