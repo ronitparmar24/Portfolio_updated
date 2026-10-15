@@ -94,6 +94,17 @@ test('assistantKnowledge: determineActions selects verified links relevant to qu
   );
   assert.equal(resumeActions[0].id, 'resume-download');
   assert.ok(!resumeActions.some((a) => a.id === 'metromind-live'));
+
+  // Test flagship pairing: when both flagships are featured, both live and both github links are present
+  const flagshipActions = determineActions(
+    'What are Ronit’s best projects?',
+    'Ronit built MetroMind and CinePulse.'
+  );
+  const flagshipIds = flagshipActions.map((a) => a.id);
+  assert.ok(flagshipIds.includes('metromind-live'));
+  assert.ok(flagshipIds.includes('metromind-github'));
+  assert.ok(flagshipIds.includes('cinepulse-live'));
+  assert.ok(flagshipIds.includes('cinepulse-github'));
 });
 
 test('assistantKnowledge: retrieves verified resume knowledge when asked for resume', () => {
