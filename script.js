@@ -542,14 +542,22 @@ loadGithubRepositories();
     assistantInput.style.height = `${newHeight}px`;
   });
 
-  // Track user scroll position in log
-  assistantLog.addEventListener('scroll', () => {
+  // Track user scroll position in log with strict guards
+  function updateJumpButton() {
+    if (!jumpBtn) return;
+    // Jump button must NEVER appear on the welcome screen or when content is not scrollable
+    const isScrollable = assistantLog.scrollHeight > assistantLog.clientHeight + 40;
+    if (!isScrollable || !conversation || conversation.length === 0) {
+      userHasScrolledUp = false;
+      jumpBtn.hidden = true;
+      return;
+    }
     const scrollBottom = assistantLog.scrollHeight - assistantLog.scrollTop - assistantLog.clientHeight;
     userHasScrolledUp = scrollBottom > 60;
-    if (jumpBtn) {
-      jumpBtn.hidden = !userHasScrolledUp;
-    }
-  });
+    jumpBtn.hidden = !userHasScrolledUp;
+  }
+
+  assistantLog.addEventListener('scroll', updateJumpButton, { passive: true });
 
   jumpBtn?.addEventListener('click', () => {
     assistantLog.scrollTo({ top: assistantLog.scrollHeight, behavior: 'smooth' });
@@ -597,10 +605,14 @@ loadGithubRepositories();
     try { sessionStorage.removeItem(STORAGE_KEY); } catch (_) {}
     conversation = [];
     lastFailedQuestion = null;
+    userHasScrolledUp = false;
+    if (jumpBtn) jumpBtn.hidden = true;
     assistantInput.value = '';
     assistantInput.style.height = '42px';
     if (charCounter) charCounter.textContent = '0/350';
     renderWelcomeState();
+    assistantLog.scrollTop = 0;
+    if (jumpBtn) jumpBtn.hidden = true;
     toast('Conversation cleared.');
     assistantInput.focus({ preventScroll: true });
   }
@@ -629,7 +641,9 @@ loadGithubRepositories();
 
     assistantTrigger.setAttribute('aria-expanded', 'true');
     assistantDialog.scrollTop = 0;
-    assistantLog.scrollTop = assistantLog.scrollHeight;
+    userHasScrolledUp = false;
+    if (jumpBtn) jumpBtn.hidden = true;
+    assistantLog.scrollTop = conversation.length > 0 ? assistantLog.scrollHeight : 0;
 
     setTimeout(() => {
       assistantInput?.focus({ preventScroll: true });
@@ -692,6 +706,9 @@ loadGithubRepositories();
 
   // Render initial welcome state
   function renderWelcomeState() {
+    userHasScrolledUp = false;
+    if (jumpBtn) jumpBtn.hidden = true;
+    assistantLog.scrollTop = 0;
     assistantLog.replaceChildren();
 
     const welcomeWrap = document.createElement('div');
@@ -739,7 +756,9 @@ loadGithubRepositories();
     startersWrap.append(list);
     welcomeWrap.append(startersWrap);
     assistantLog.append(welcomeWrap);
-    scrollToBottomIfAllowed(false);
+    assistantLog.scrollTop = 0;
+    userHasScrolledUp = false;
+    if (jumpBtn) jumpBtn.hidden = true;
   }
 
   // Safe DOM-based markdown formatter (Guarantees zero XSS)
@@ -1255,6 +1274,7 @@ loadGithubRepositories();
 
     lastFailedQuestion = null;
     userHasScrolledUp = false;
+    if (jumpBtn) jumpBtn.hidden = true;
 
     // Reset input
     assistantInput.value = '';
