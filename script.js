@@ -610,15 +610,18 @@ loadGithubRepositories();
     clearSession();
   });
 
-  // Open & Close docked panel
+  // Open & Close docked panel / mobile bottom sheet
+  function checkIsMobile() {
+    return window.innerWidth <= 820 || window.matchMedia('(max-width: 820px)').matches;
+  }
+
   function openAssistant() {
     if (assistantDialog.open) return;
 
     const launcherWrap = document.querySelector('.assistant-launcher-wrap');
     if (launcherWrap) launcherWrap.classList.add('is-open');
 
-    const isMobile = window.innerWidth <= 640;
-    if (isMobile) {
+    if (checkIsMobile()) {
       assistantDialog.showModal();
     } else {
       assistantDialog.show();
@@ -643,6 +646,21 @@ loadGithubRepositories();
     assistantTrigger.setAttribute('aria-expanded', 'false');
     assistantTrigger.focus({ preventScroll: true });
   }
+
+  // Dismiss when clicking the backdrop on mobile
+  assistantDialog.addEventListener('click', (e) => {
+    if (!checkIsMobile() || !assistantDialog.open) return;
+    const rect = assistantDialog.getBoundingClientRect();
+    const isInDialog =
+      rect.top <= e.clientY &&
+      e.clientY <= rect.top + rect.height &&
+      rect.left <= e.clientX &&
+      e.clientX <= rect.left + rect.width;
+
+    if (!isInDialog || e.target === assistantDialog) {
+      closeAssistant();
+    }
+  });
 
   assistantTrigger.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -857,7 +875,7 @@ loadGithubRepositories();
       const targetSelector = act.target || act.url;
       const el = document.querySelector(targetSelector);
       if (el) {
-        if (window.innerWidth <= 640 && assistantDialog.open) {
+        if (checkIsMobile() && assistantDialog.open) {
           closeAssistant();
         }
         el.scrollIntoView({ behavior: 'smooth' });
@@ -869,7 +887,7 @@ loadGithubRepositories();
     if (act.type === 'openProject' || act.actionType === 'openProject') {
       const projectId = act.id || act.project?.id;
       if (typeof openProject === 'function' && projectId) {
-        if (window.innerWidth <= 640 && assistantDialog.open) {
+        if (checkIsMobile() && assistantDialog.open) {
           closeAssistant();
         }
         openProject(projectId, assistantTrigger);
@@ -879,7 +897,7 @@ loadGithubRepositories();
 
     // Open contact form and prefill
     if (act.type === 'openContact' || act.actionType === 'openContact') {
-      if (window.innerWidth <= 640 && assistantDialog.open) {
+      if (checkIsMobile() && assistantDialog.open) {
         closeAssistant();
       }
       const contactEl = document.querySelector('#contact');
